@@ -1,10 +1,11 @@
 # inspiración https://ecofeminita.github.io/EcoFemiData/informe_desigualdad_genero/trim_2019_03/informe.nb.html#
-
+# Verde Club: #009204
+# Azul Club: #344D7E
 
 library(tidyverse)
 library(googlesheets4)
 library(gargle)
-library(funModeling)
+library(gt)
 options(scipen = 999)
 
 
@@ -25,9 +26,12 @@ paises <- kiwi %>%
   mutate(cuenta = 1) %>% 
   group_by(`País en el que trabajas`) %>% 
   summarise(Cuenta = sum(cuenta)) %>% 
+  filter(Cuenta > 4) %>% 
   arrange(-Cuenta)
 
-gt::gt(paises)
+gt(paises) %>% 
+  tab_header(title = "Cantidad de respuestas por país",
+             subtitle = "Países con más de 5 respuestas") 
 
 # Respuestas por provincia (Sólo para Argentina)
 provincias <- kiwi %>% 
@@ -38,7 +42,7 @@ provincias <- kiwi %>%
   arrange(-Cuenta)
 
 
-gt::gt(provincias)
+gt(provincias)
 
 
 liderazgo <- kiwi %>% 
@@ -53,7 +57,7 @@ kiwi %>%
   select(`Rubro de la empresa`) %>% 
   group_by(`Rubro de la empresa`) %>% 
   count(sort = TRUE) %>% 
-  print(n = 28)
+  print(n = nrow(.))
 
 # Exploración para Argentina
 liderazgo <- liderazgo %>% 
@@ -160,3 +164,81 @@ coment_bi %>%
   ungroup() %>%
   wordcloud2(size = 0.6, shape = "diamond", color = "random-light", backgroundColor = "#1C2833")
 
+#### Comparación Dolar ####
+
+# Fuente: Banco Central de cada país al 19/10/2020
+# Dólar oficial - Precio de Venta
+
+pais <- c("Argentina", "Bolivia", "Chile", "México", "Paraguay", "Perú", "Uruguay")
+tipo_cambio <- c(82.5, 6.96, 795.68, 21.38, 7027.43, 3.597, 48.892)
+
+tc <- tibble (pais, tipo_cambio) # Creo una tabla con los tipos de cambio de los países con más de 5 respuestas
+
+# Preparación de datos
+
+sueldos_dolar <- kiwi %>% 
+  filter(Trabajo !="Freelance") %>% 
+  select(Género, `¿En qué puesto trabajás?`,`País en el que trabajas` ,
+         `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`,
+         `Tipo de contratación`)
+
+names(sueldos_dolar) <- c("genero", "puesto","pais", "sueldo", "contrato")
+
+sueldos_dolar <- sueldos_dolar %>% 
+  mutate(puesto = str_trim(puesto, side = "both")) %>% 
+  filter(puesto != "Juzgado Civil y Comercial", puesto != "Pasante", 
+         puesto != "Programador", puesto != "Jefe de Proyecto", 
+         contrato != "Pasante")
+
+sueldos_dolar %>% 
+  group_by(contrato) %>% 
+  count(pais) %>% 
+  filter(contrato == "Part time")
+
+# Agrego un multiplicador de sueldos para convertir los sueldos part time en full time
+sueldos_dolar <- sueldos_dolar %>% 
+  left_join(tc, by="pais") %>% 
+  mutate(multiplicador = if_else(contrato == "Part time", 1.5, 1),
+         sueldo = as.numeric(unlist(sueldo)),
+         sueldo_ft = sueldo * multiplicador,
+         sueldo_dolar = sueldo_ft/tipo_cambio,
+         cuenta = 1)
+
+
+mediana_pais <- sueldos_dolar %>% 
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"),
+         sueldo_dolar < 10000) %>% 
+  group_by(pais) %>% 
+  summarise(sueldop = list(mean_se(sueldo_dolar)),
+            cant = sum(cuenta)) %>% 
+  unnest() %>% 
+  print(n = nrow(.)) %>% 
+  filter(cant>4)
+
+sueldo_dolar_pais <- sueldos_dolar %>% 
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"), 
+         between(sueldo_dolar, 200,7000))
+  
+
+# Gráfico
+# Opción A
+ggplot(mediana_pais, aes(pais, y =  y))+
+  geom_col(fill = "#344D7E") +
+  geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
+  geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), alpha = 0.3, size = 3)+
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
+  labs(title = "Mediana salarial por país",
+       subtitle = "Sueldo en U$S",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con más de 5 respuestas",
+       x = "", y = "")
+
+# Opción B
+ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
+  geom_col(fill = "#344D7E") +
+  geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
+  geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), alpha = 0.3, size = 3)+
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
+  labs(title = "Mediana salarial por país",
+       subtitle = "Sueldo en U$S",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con más de 5 respuestas",
+       x = "", y = "")
