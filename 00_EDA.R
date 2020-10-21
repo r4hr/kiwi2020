@@ -1,6 +1,8 @@
 # inspiración https://ecofeminita.github.io/EcoFemiData/informe_desigualdad_genero/trim_2019_03/informe.nb.html#
+# inspiración: https://blog.datawrapper.de/gendercolor/
 # Verde Club: #009204
 # Azul Club: #344D7E
+
 
 # Paquetes y opciones -------------------------------------
 
@@ -9,7 +11,8 @@ library(googlesheets4)
 library(gargle)
 library(gt)
 library(extrafont)
-
+library(ggthemes)
+library(scales)
 
 options(scipen = 999)
 
@@ -20,6 +23,8 @@ estilo <- theme(panel.grid = element_blank(),
                 plot.background = element_rect(fill = "#fbfcfc"),
                 panel.background = element_blank(),
                 text = element_text(family = "Roboto"))
+
+genero <- c("#8624F5", "#1FC3AA", "#FFD129", "#75838F") #Violeta - Verde - Amarillo - Gris
 
 # Carga de datos ------------------------------------------
 
@@ -95,8 +100,7 @@ liderazgo %>%
   theme_minimal()+
   theme(legend.position = "bottom")
 
-library(ggthemes)
-library(scales)
+
 
 liderazgo %>% 
   filter(puesto %in% c("Gerente", "HRBP", "Analista")) %>% 
@@ -199,12 +203,14 @@ sueldos_dolar <- kiwi %>%
 
 names(sueldos_dolar) <- c("genero", "puesto","pais", "sueldo", "contrato")
 
+# Eliminar los puestos que no sirven al análisis
 sueldos_dolar <- sueldos_dolar %>% 
   mutate(puesto = str_trim(puesto, side = "both")) %>% 
   filter(puesto != "Juzgado Civil y Comercial", puesto != "Pasante", 
          puesto != "Programador", puesto != "Jefe de Proyecto", 
          contrato != "Pasante")
 
+# Controlar la cantidad de casos de contratos part time
 sueldos_dolar %>% 
   group_by(contrato) %>% 
   count(pais) %>% 
@@ -215,8 +221,8 @@ sueldos_dolar <- sueldos_dolar %>%
   left_join(tc, by="pais") %>% 
   mutate(multiplicador = if_else(contrato == "Part time", 1.5, 1),
          sueldo = as.numeric(unlist(sueldo)),
-         sueldo_ft = sueldo * multiplicador,
-         sueldo_dolar = sueldo_ft/tipo_cambio,
+         sueldo_ft = sueldo * multiplicador,    # Hace la equivalencia de un sueldo part time a full time
+         sueldo_dolar = sueldo_ft/tipo_cambio,  # Convierto los sueldos a dólares
          cuenta = 1)
 
 summary(sueldos_dolar)
@@ -232,7 +238,7 @@ mediana_pais <- sueldos_dolar %>%
   group_by(pais) %>% 
   summarise(sueldop = list(mean_se(sueldo_dolar)),
             cant = sum(cuenta)) %>% 
-  unnest(cols = c(sueldop)) %>% 
+  unnest(cols = c(sueldop)) %>%
   print(n = nrow(.)) %>% 
   filter(cant>4)
 
@@ -240,7 +246,6 @@ sueldo_dolar_pais <- sueldos_dolar %>%
   filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"), 
          between(sueldo_dolar, 400,3000))
   
-
 # Gráfico
 # Opción A
 ggplot(mediana_pais, aes(pais, y =  y))+
@@ -254,7 +259,7 @@ ggplot(mediana_pais, aes(pais, y =  y))+
        x = "", y = "")
 
 # Opción B
-ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
+ggplot(mediana_pais, aes(x = reorder(pais, -y), y =  y))+
   geom_col(fill = "#344D7E", alpha = 0.85) +
   geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
   geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), 
@@ -280,13 +285,18 @@ kiwi %>%
 
 diversidad <- kiwi %>% 
   filter(Trabajo !="Freelance") %>% 
-  mutate(genero = fct_collapse(Género, "No binario"= c("Género diverso (género diverso / género fluido /otras minorías)", "No binario")))
+  mutate(genero = fct_collapse(Género, 
+                               "No binario"= c("Género diverso (género diverso / género fluido /otras minorías)", "No binario")))
 
 div <- diversidad %>% 
 select(genero) %>% 
+  mutate(genero = factor(genero, 
+                         levels = c("Femenino", "Masculino", 
+                                    "No binario", "Prefiero no responder"))) %>% 
   group_by(genero) %>% 
   summarise (n = n()) %>% 
-  mutate(freq = n/sum(n)) 
+  mutate(freq = n/sum(n)) %>% 
+  arrange(-n)
 
 # Compute the cumulative percentages (top of each rectangle)
 div$ymax <- cumsum(div$freq)
@@ -298,15 +308,84 @@ div$ymin <- c(0, head(div$ymax, n=-1))
 div$labelPosition <- (div$ymax + div$ymin) / 2
 
 # Compute a good label
-div$label <- paste0(div$genero, "\n value: ", div$n)
+div$label <- paste0(div$genero, "\n Cant: ", div$n)
 
 # Make the plot
 ggplot(div, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=genero)) +
   geom_rect() +
   coord_polar(theta="y") + # Try to remove that to understand how the chart is built initially
   xlim(c(2, 4)) +# Try to remove that to see how to make a pie chart
-  geom_label( x=3.5, aes(y=labelPosition, label=genero), size=4) +
-  scale_fill_brewer(palette=3) +
+  scale_fill_manual(values = c("#8624F5",  "#1FC3AA", "#FFD129","#75838F")) +
   theme_void() +
-  theme(legend.position = "none")
+  theme(legend.position = "right",
+        panel.background = element_blank(),
+        text = element_text(family = "Roboto")) +
+  labs(title = "Cantidad de respuestas según género",
+       fill = "Género", 
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
 
+# Tabla de distribución de género
+gt(div %>% select(genero, n, freq)) %>% 
+  tab_header(title = "Cantidad de respuestas según género") %>% 
+  tab_source_note(source_note = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam") %>% 
+  fmt_percent(columns = "freq", decimals = 1) %>% 
+  cols_label(genero = "Género",
+             n = "Cantidad",
+             freq = "Porcentaje") %>% 
+  cols_align(align = "center", 
+             columns = vars(n, freq))
+
+
+# Representación en puestos de liderazgo
+
+
+div
+
+kiwi %>% 
+  filter(Trabajo != "Freelance") %>% 
+  select(Género) %>% 
+  group_by(Género) %>% 
+  summarise (n = n()) %>% 
+  mutate(freq = n/sum(n)) 
+
+lideres <- diversidad %>% 
+ select(genero = `Género`,
+         puesto = `¿En qué puesto trabajás?`,
+         equipo = `¿Cuántas personas tenés a cargo? (poné 0 si no tenés gente a cargo?`) %>% 
+  filter(puesto != "Juzgado Civil y Comercial", puesto != "Pasante", 
+         puesto != "Programador", puesto != "Jefe de Proyecto") %>% 
+  mutate(genero = fct_recode(genero,
+                             "No binario" = "Género diverso (género diverso / género fluido /otras minorías)"))
+
+
+# Propoción de líderes hombres y mujeres
+lideres_genero <- lideres %>% 
+  filter(genero %in% c("Masculino","Femenino")) %>% 
+  group_by(genero) %>%
+  mutate(gente_a_cargo = if_else(puesto %in% c("Responsable", "Jefe", "Gerente", 
+                                               "Supervisor", "Director"),1,0)) %>%
+  summarise(lider = sum(gente_a_cargo)) %>% 
+  left_join(div) %>% 
+  select(genero, lider, n) %>% 
+  mutate(proporcion = percent(lider/n))
+
+
+# Gráfico
+lideres_genero %>% 
+  mutate(porc_lider = lider/n, 
+         porc_no_lider = 1 - porc_lider) %>% 
+  pivot_longer(cols = c(porc_lider, porc_no_lider),
+               names_to = "es_lider", 
+               values_to = "valores") %>% 
+  mutate(es_lider = factor(es_lider, 
+                           levels = c("porc_lider", "porc_no_lider"), 
+                           labels = c("Líder", "No Líder"))) %>% 
+  ggplot(aes(x= genero, y = valores, fill = es_lider))+
+  geom_col(position = "fill")+
+  estilo +
+  scale_fill_manual(values = c("#344D7E", "#75838F")) +
+  labs(title = "Proporción de Líderes según género",
+       x = "", y = "", fill = "", 
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
+
+  

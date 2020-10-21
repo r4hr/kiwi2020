@@ -15,7 +15,7 @@ background-image: url(kiwi-fondo.png)
 background-size: cover
 
 ```{r setup, include=FALSE}
-options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(fig.retina = 3, warning = FALSE, message = FALSE)
 ```
 
 
@@ -123,11 +123,11 @@ gt(paises) %>%
 Recibimos un total de `r nrow(kiwi)` respuestas `r emo::ji("party")`.
 
 ---
-# Comparación de sueldos por países
+# Comparación de sueldos de RRHH por países
 
 .pull-left[
 
-```{r sueldos_dolar, warning=FALSE, message=FALSE, echo=FALSE}
+```{r sueldos_dolar, warning=FALSE, message=FALSE, echo=FALSE, dpi=300}
 
 # Países con más de 5 respuestas
 pais <- c("Argentina", "Bolivia", "Chile", "México", "Paraguay", "Perú", "Uruguay")
@@ -204,4 +204,133 @@ ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
 2. Para la comparación de los sueldos en dólares estadounidenses tomamos el tipo de cambio de cada país al 19 de octubre de 2020 publicados por los respectivos bancos centrales.
 3. Sólo mostramos resultados de los países con al menos 5 respuestas.
 4. Podamos los sueldos para mostrar aquellos que están dentro de los percentiles 5 y 95.
+]
+
+---
+# Representación de mujeres en puestos de liderazgo
+## Participación según género
+
+.pull-left[
+```{r respuestas-genero, echo=FALSE, warning=FALSE, dpi=300, out.width="90%"}
+diversidad <- kiwi %>% 
+  filter(Trabajo !="Freelance") %>% 
+  mutate(genero = fct_collapse(Género, 
+                               "No binario"= c("Género diverso (género diverso / género fluido /otras minorías)", "No binario")))
+
+div <- diversidad %>% 
+select(genero) %>% 
+  mutate(genero = factor(genero, 
+                         levels = c("Femenino", "Masculino", 
+                                    "No binario", "Prefiero no responder"))) %>% 
+  group_by(genero) %>% 
+  summarise (n = n()) %>% 
+  mutate(freq = n/sum(n)) %>% 
+  arrange(-n)
+
+# Compute the cumulative percentages (top of each rectangle)
+div$ymax <- cumsum(div$freq)
+
+# Compute the bottom of each rectangle
+div$ymin <- c(0, head(div$ymax, n=-1))
+
+# Compute label position
+div$labelPosition <- (div$ymax + div$ymin) / 2
+
+# Compute a good label
+div$label <- paste0(div$genero, "\n Cant: ", div$n)
+
+# Make the plot
+ggplot(div, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=genero)) +
+  geom_rect() +
+  coord_polar(theta="y") + 
+  xlim(c(2, 4)) +
+  scale_fill_manual(values = c("#8624F5", "#1FC3AA", "#FFD129", "#75838F")) +
+  theme_void() +
+  theme(legend.position = "right",
+        panel.background = element_blank(),
+        text = element_text(family = "Roboto")) +
+  labs(title = "Cantidad de respuestas según género",
+       fill = "Género", 
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
+```
+
+]
+
+.pull-right[
+```{r genero-tabla, echo=FALSE}
+gt(div %>% select(genero, n, freq)) %>% 
+  tab_header(title = "Cantidad de respuestas según género") %>% 
+  tab_source_note(source_note = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam") %>% 
+  fmt_percent(columns = "freq", decimals = 1) %>% 
+  cols_label(genero = "Género",
+             n = "Cantidad",
+             freq = "Porcentaje") %>% 
+    cols_align(align = "center", 
+               columns = vars(n, freq))
+
+```
+
+]
+
+---
+# Representación de mujeres en puestos de liderazgo
+## Participación según género
+
+.pull-left[
+
+```{r genero-lider, echo=FALSE}
+lideres <- diversidad %>% 
+ select(genero = `Género`,
+         puesto = `¿En qué puesto trabajás?`,
+         equipo = `¿Cuántas personas tenés a cargo? (poné 0 si no tenés gente a cargo?`) %>% 
+  filter(puesto != "Juzgado Civil y Comercial", puesto != "Pasante", 
+         puesto != "Programador", puesto != "Jefe de Proyecto") %>% 
+  mutate(genero = fct_recode(genero,
+                             "No binario" = "Género diverso (género diverso / género fluido /otras minorías)"))
+
+
+# Propoción de líderes hombres y mujeres
+lideres_genero <- lideres %>% 
+  filter(genero %in% c("Masculino","Femenino")) %>% 
+  group_by(genero) %>%
+  mutate(gente_a_cargo = if_else(puesto %in% c("Responsable", "Jefe", "Gerente", 
+                                               "Supervisor", "Director"),1,0)) %>%
+  summarise(lider = sum(gente_a_cargo)) %>% 
+  left_join(div) %>% 
+  select(genero, lider, n) %>% 
+  mutate(proporcion = percent(lider/n))
+
+```
+
+De acuerdo a las respuestas recolectadas **2 de cada 3** participantes son mujeres.
+
+Para los puestos de liderazgo consideramos las personas en los puestos de *Director, Gerente, Jefe, Responsable,* y *Supervisor*.
+
+Del total de mujeres, `r lideres_genero[1,3]` respuestas, `r lideres_genero[1,2]` ocupan un puesto de liderazgo (`r lideres_genero[1, 4]`).
+
+Del total de hombres, `r lideres_genero[2, 3]` respuestas, `r lideres_genero[2,2]` ocupan un puesto de liderazgo (`r lideres_genero[2, 4]`).
+
+]
+
+.pull-right[
+```{r genero-lideres-plot, echo=FALSE, dpi=300}
+# Gráfico
+lideres_genero %>% 
+  mutate(porc_lider = lider/n, 
+         porc_no_lider = 1 - porc_lider) %>% 
+  pivot_longer(cols = c(porc_lider, porc_no_lider),
+               names_to = "es_lider", 
+               values_to = "valores") %>% 
+  mutate(es_lider = factor(es_lider, 
+                           levels = c("porc_lider", "porc_no_lider"), 
+                           labels = c("Líder", "No Líder"))) %>% 
+  ggplot(aes(x= genero, y = valores, fill = es_lider))+
+  geom_col(position = "fill")+
+  estilo +
+  scale_fill_manual(values = c("#344D7E", "#75838F")) +
+  labs(title = "Proporción de Líderes según género",
+       x = "", y = "", fill = "", 
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
+```
+
 ]
