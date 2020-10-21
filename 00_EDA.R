@@ -2,14 +2,32 @@
 # Verde Club: #009204
 # Azul Club: #344D7E
 
+# Paquetes y opciones -------------------------------------
+
 library(tidyverse)
 library(googlesheets4)
 library(gargle)
 library(gt)
+library(extrafont)
+
+
 options(scipen = 999)
+
+loadfonts(quiet = TRUE)
+
+# Estilo de los gráficos
+estilo <- theme(panel.grid = element_blank(),
+                plot.background = element_rect(fill = "#fbfcfc"),
+                panel.background = element_blank(),
+                text = element_text(family = "Roboto"))
+
+# Carga de datos ------------------------------------------
 
 
 kiwi <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
+
+
+# Análisis exploratorio ----------------------------------
 
 glimpse(kiwi)
 
@@ -204,20 +222,26 @@ sueldos_dolar <- sueldos_dolar %>%
          sueldo_dolar = sueldo_ft/tipo_cambio,
          cuenta = 1)
 
+summary(sueldos_dolar)
+
+funModeling::profiling_num(sueldos_dolar)
+
+# Dado que los percentiles 5 y 95 están en U$412 y 2795 respectivamente, 
+# podamos todo lo que esté fuera de ese rango
 
 mediana_pais <- sueldos_dolar %>% 
   filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"),
-         sueldo_dolar < 10000) %>% 
+         between(sueldo_dolar,400,3000)) %>% 
   group_by(pais) %>% 
   summarise(sueldop = list(mean_se(sueldo_dolar)),
             cant = sum(cuenta)) %>% 
-  unnest() %>% 
+  unnest(cols = c(sueldop)) %>% 
   print(n = nrow(.)) %>% 
   filter(cant>4)
 
 sueldo_dolar_pais <- sueldos_dolar %>% 
   filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"), 
-         between(sueldo_dolar, 200,7000))
+         between(sueldo_dolar, 400,3000))
   
 
 # Gráfico
@@ -228,17 +252,25 @@ ggplot(mediana_pais, aes(pais, y =  y))+
   geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), alpha = 0.3, size = 3)+
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
   labs(title = "Mediana salarial por país",
-       subtitle = "Sueldo en U$S",
+       subtitle = "Sueldos de RRHH en U$S",
        caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con más de 5 respuestas",
        x = "", y = "")
 
 # Opción B
 ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
-  geom_col(fill = "#344D7E") +
+  geom_col(fill = "#344D7E", alpha = 0.85) +
   geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
-  geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), alpha = 0.3, size = 3)+
+  geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), 
+             alpha = 0.3, size = 2, color = "#75838F")+
+  geom_text(aes(label = round(x=y, 0), vjust = -0.5, fontface = "bold"), color = "black")+
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
   labs(title = "Mediana salarial por país",
-       subtitle = "Sueldo en U$S",
+       subtitle = "Sueldos de RRHH en U$S",
        caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con más de 5 respuestas",
-       x = "", y = "")
+       x = "", y = "") + 
+  estilo
+
+
+# Representación en puestos de liderazgo ------------------
+
+
