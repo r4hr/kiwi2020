@@ -1,0 +1,207 @@
+---
+title: "Encuesta KIWI de Sueldos de RRHH de LATAM"
+subtitle: "Resultados Parciales 2020"
+output:
+  xaringan::moon_reader:
+    seal: false
+    css: [default, shinobi, tamu-fonts]
+    nature:
+      ratio: "16:9"
+    language: "spanish"
+
+---
+class: inverse, top, center
+background-image: url(kiwi-fondo.png)
+background-size: cover
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+```
+
+
+???
+
+Image credit: [Designed by Freepik]("http://www.freepik.com")
+
+---
+# Quiénes somos
+
+El [Club de R para RRHH](https://r4hr.club) es una comunidad de aprendizaje de programación en R destinada para las personas que trabajan en Recursos Humanos en países de habla hispana.
+
+Nuestro objetivo es acercar el mundo de ciencias de datos a nuestra profesión, adaptando el contenido a nuestros skills y conocimientos, y también siempre que podemos, usando datos relacionados con la gestión de personas, y en castellano, para hacer más accesible el aprendizaje.
+
+Este es un proyecto que ideó [Sergio García Mora](https://www.linkedin.com/in/sergiogarciamora/), y que reúne a gente de Argentina, Perú, Chile, Paraguay, Uruguay, Panamá, USA, Francia, y cada vez más y más profesionales de distintas latitudes se unen y contribuyen al proyecto.
+
+Para más información sobre el Club de R leé [este post](https://r4hr.club/2020/09/23/el-club-de-r-para-rrhh/), o escribinos a [info@r4hr.club](mailto:info@r4hr.club).
+
+---
+# Quiénes somos
+## La encuesta KIWI `r emo::ji("kiwi")` de Sueldos de RRHH para LATAM
+
+Uno de los problemas en el aprendizaje de People Analytics es la falta de datasets para practicar, así que una decisión que tomamos fue el de generar nuestro propio dataset y de abrirlo para toda la comunidad.
+
+Para hacer esta encuesta nos "inspiramos" en [SysArmy](https://sysarmy.com/blog/), una comunidad para las personas que trabajan en tecnología que además de organizar uno de los eventos más importantes de tecnología de Argentina, Nerdearla, y también organizan una encuesta salarial dos veces por año.
+
+Estas son las motivaciones detrás de esta encuesta. Tener nuestro propio dataset, compartir los resultados y los datos, para que todos los entusiastas de RRHH y los datos cuenten con una fuente de datos para practicar.
+
+> Si querés conocer la historia detrás del nombre de la encuesta, la podés [conocer aquí](https://r4hr.club/why-kiwi/).
+
+---
+background-color: "#5d6d7e" 
+# Quiénes somos
+## Organizadores
+.pull-left[
+`r emo::ji("male_detective")` [Adrián Quiroga](https://www.linkedin.com/in/adrian-quiroga-ab57424b/) 
+
+`r emo::ji("woman_technologist")` [Alithu Castro](https://www.linkedin.com/in/alithucastro/)
+
+`r emo::ji("woman_student")` [Andrea Herpsomer](https://www.linkedin.com/in/andreaherpsomer/)
+
+`r emo::ji("woman_artist")` [Carla Cirone](https://www.linkedin.com/in/carla-cirone-0566b095/)
+
+`r emo::ji("woman_technologist")` [Daniela García](https://www.linkedin.com/in/claudia-daniela-garcia-138b1a14b/)
+
+`r emo::ji("woman_astronaut")` [Lucía Huilén Gómez](https://www.linkedin.com/in/luc%C3%ADa-huil%C3%A9n-g%C3%B3mez-93565276/)
+
+`r emo::ji("man_singer")` [Santiago Lardone Quinodoz](https://www.linkedin.com/in/santiago-lardone-quinodoz-978588167/)
+
+`r emo::ji("snake")` [Sebastián Lombraña](https://www.linkedin.com/in/santiago-lardone-quinodoz-978588167/)
+
+`r emo::ji("metal")` [Sergio García Mora](https://www.linkedin.com/in/sergiogarciamora/)
+
+`r emo::ji("woman_teacher")` [Yanel Paulette](https://www.linkedin.com/in/yanelpaulette/)
+]
+
+.pull-right[<img src="kiwi-happy.jpg"  />]
+
+---
+class: inverse, center, middle
+# Respuestas parciales
+
+<img src="https://media.giphy.com/media/xThtalkAxYnZd94uB2/giphy.gif" />
+
+El 12 de noviembre publicamos los resultados finales.
+
+---
+# Participación
+## Respuestas por países
+
+
+```{r carga, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(googlesheets4)
+library(gargle)
+library(gt)
+library(extrafont)
+library(scales)
+
+options(scipen = 999)
+
+loadfonts(quiet = TRUE)
+
+# Estilo de los gráficos
+estilo <- theme(panel.grid = element_blank(),
+                plot.background = element_rect(fill = "#fbfcfc"),
+                panel.background = element_blank(),
+                text = element_text(family = "Roboto"))
+
+kiwi <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
+
+paises <- kiwi %>% 
+  select(`País en el que trabajas`) %>% 
+  mutate(cuenta = 1) %>% 
+  group_by(`País en el que trabajas`) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  filter(Cuenta > 4) %>% 
+  arrange(-Cuenta)
+
+gt(paises) %>% 
+  tab_header(title = "Cantidad de respuestas por país",
+             subtitle = "Países con más de 5 respuestas") 
+```
+
+Recibimos un total de `r nrow(kiwi)` respuestas `r emo::ji("party")`.
+
+---
+# Comparación de sueldos por países
+
+.pull-left[
+
+```{r sueldos_dolar, warning=FALSE, message=FALSE, echo=FALSE}
+
+# Países con más de 5 respuestas
+pais <- c("Argentina", "Bolivia", "Chile", "México", "Paraguay", "Perú", "Uruguay")
+tipo_cambio <- c(82.5, 6.96, 795.68, 21.38, 7027.43, 3.597, 48.892)
+
+tc <- tibble (pais, tipo_cambio) # Creo una tabla con los tipos de cambio de los países con más de 5 respuestas
+
+# Preparación de datos
+
+sueldos_dolar <- kiwi %>% 
+  filter(Trabajo !="Freelance") %>% 
+  select(Género, `¿En qué puesto trabajás?`,`País en el que trabajas` ,
+         `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`,
+         `Tipo de contratación`)
+
+names(sueldos_dolar) <- c("genero", "puesto","pais", "sueldo", "contrato")
+
+sueldos_dolar <- sueldos_dolar %>% 
+  mutate(puesto = str_trim(puesto, side = "both")) %>% 
+  filter(puesto != "Juzgado Civil y Comercial", puesto != "Pasante", 
+         puesto != "Programador", puesto != "Jefe de Proyecto", 
+         contrato != "Pasante")
+
+
+# Agrego un multiplicador de sueldos para convertir los sueldos part time en full time
+sueldos_dolar <- sueldos_dolar %>% 
+  left_join(tc, by="pais") %>% 
+  mutate(multiplicador = if_else(contrato == "Part time", 1.5, 1),
+         sueldo = as.numeric(unlist(sueldo)),
+         sueldo_ft = sueldo * multiplicador,
+         sueldo_dolar = sueldo_ft/tipo_cambio,
+         cuenta = 1)
+
+
+# Dado que los percentiles 5 y 95 están en U$412 y 2795 respectivamente, 
+# podamos todo lo que esté fuera de ese rango
+
+mediana_pais <- sueldos_dolar %>% 
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"),
+         between(sueldo_dolar,400,3000)) %>% 
+  group_by(pais) %>% 
+  summarise(sueldop = list(mean_se(sueldo_dolar)),
+            cant = sum(cuenta)) %>% 
+  unnest(cols = c(sueldop)) %>% 
+  filter(cant>4)
+
+sueldo_dolar_pais <- sueldos_dolar %>% 
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"), 
+         between(sueldo_dolar, 400,3000))
+  
+
+# Gráfico
+
+ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
+  geom_col(fill = "#344D7E", alpha = 0.85) +
+  geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
+  geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), 
+             alpha = 0.3, size = 2, color = "#75838F")+
+  geom_text(aes(label = round(x=y, 0), vjust = -0.5, fontface = "bold"), color = "black")+
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
+  labs(title = "Mediana salarial por país",
+       subtitle = "Sueldos de RRHH en U$S",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con más de 5 respuestas",
+       x = "", y = "") + 
+  estilo
+
+```
+
+]
+
+.pull-right[
+**Aclaraciones:** 
+1. Los resultados no son representativos dada la baja cantidad de respuestas (cada punto representa una respuesta).
+2. Para la comparación de los sueldos en dólares estadounidenses tomamos el tipo de cambio de cada país al 19 de octubre de 2020 publicados por los respectivos bancos centrales.
+3. Sólo mostramos resultados de los países con al menos 5 respuestas.
+4. Podamos los sueldos para mostrar aquellos que están dentro de los percentiles 5 y 95.
+]
