@@ -31,12 +31,7 @@ kiwi <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
 
 glimpse(kiwi)
 
-# Representación de género en la encuesta
-kiwi %>% 
-  select(Género) %>% 
-  group_by(Género) %>% 
-  summarise (n = n()) %>% 
-  mutate(freq = n/sum(n)) 
+
 
 # Respuestas por países
 paises <- kiwi %>% 
@@ -184,6 +179,8 @@ coment_bi %>%
 
 #### Comparación Dolar ####
 
+# Sección para comparar los sueldos en dólares en los países con más de 5 respuestas.
+
 # Fuente: Banco Central de cada país al 19/10/2020
 # Dólar oficial - Precio de Venta
 
@@ -273,4 +270,43 @@ ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
 
 # Representación en puestos de liderazgo ------------------
 
+
+# Representación de género en la encuesta
+kiwi %>% 
+  select(Género) %>% 
+  group_by(Género) %>% 
+  summarise (n = n()) %>% 
+  mutate(freq = n/sum(n)) 
+
+diversidad <- kiwi %>% 
+  filter(Trabajo !="Freelance") %>% 
+  mutate(genero = fct_collapse(Género, "No binario"= c("Género diverso (género diverso / género fluido /otras minorías)", "No binario")))
+
+div <- diversidad %>% 
+select(genero) %>% 
+  group_by(genero) %>% 
+  summarise (n = n()) %>% 
+  mutate(freq = n/sum(n)) 
+
+# Compute the cumulative percentages (top of each rectangle)
+div$ymax <- cumsum(div$freq)
+
+# Compute the bottom of each rectangle
+div$ymin <- c(0, head(div$ymax, n=-1))
+
+# Compute label position
+div$labelPosition <- (div$ymax + div$ymin) / 2
+
+# Compute a good label
+div$label <- paste0(div$genero, "\n value: ", div$n)
+
+# Make the plot
+ggplot(div, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=genero)) +
+  geom_rect() +
+  coord_polar(theta="y") + # Try to remove that to understand how the chart is built initially
+  xlim(c(2, 4)) +# Try to remove that to see how to make a pie chart
+  geom_label( x=3.5, aes(y=labelPosition, label=genero), size=4) +
+  scale_fill_brewer(palette=3) +
+  theme_void() +
+  theme(legend.position = "none")
 
