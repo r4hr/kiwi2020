@@ -42,7 +42,7 @@ meta() %>%
     og_author = "Sergio Garcia Mora",
     twitter_card_type = "summary_large_image",
     twitter_creator = "@sergiogarciamor",
-    twitter_site = "@rrhh_club"
+    twitter_site = "@club_rrhh"
   )
 ```
 
