@@ -50,6 +50,8 @@ meta() %>%
 xaringanExtra::use_share_again()
 ```
 
+
+
 ???
 
 Image credit: [Designed by Freepik]("http://www.freepik.com")
@@ -112,6 +114,10 @@ background-color: "#5d6d7e"
 
 .pull-right[
 ### Completá la encuesta en [este link](https://bit.ly/sueldos-rh)
+
+--
+... dale... completala
+<img src="https://tenor.com/view/austin-powers-dr-evil-you-gif-5093201" />
 ]
 
 ---
