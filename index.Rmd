@@ -28,7 +28,7 @@ Image credit: [Designed by Freepik]("http://www.freepik.com")
 ---
 # Quiénes somos
 
-El [Club de R para RRHH](https://r4hr.club) es una comunidad de aprendizaje de programación en R destinada para las personas que trabajan en Recursos Humanos en países de habla hispana.
+El [Club de R para RRHH](https://r4hr.club) es una comunidad de aprendizaje de programación en R destinada para las personas que trabajan en Recursos Humanos de habla hispana.
 
 Nuestro objetivo es acercar el mundo de ciencias de datos a nuestra profesión, adaptando el contenido a nuestros skills y conocimientos, y también siempre que podemos, usando datos relacionados con la gestión de personas, y en castellano, para hacer más accesible el aprendizaje.
 
@@ -42,9 +42,9 @@ Para más información sobre el Club de R leé [este post](https://r4hr.club/202
 
 Uno de los problemas en el aprendizaje de People Analytics es la falta de datasets para practicar, así que una decisión que tomamos fue el de generar nuestro propio dataset y de abrirlo para toda la comunidad.
 
-Para hacer esta encuesta nos "inspiramos" en [SysArmy](https://sysarmy.com/blog/), una comunidad para las personas que trabajan en tecnología que además de organizar uno de los eventos más importantes de tecnología de Argentina, Nerdearla, y también organizan una encuesta salarial dos veces por año.
+Para hacer esta encuesta nos "inspiramos" en [SysArmy](https://sysarmy.com/blog/), una comunidad para las personas que trabajan en tecnología que además de organizar uno de los eventos más importantes de tecnología de Argentina, Nerdearla, y que también organizan una encuesta salarial dos veces por año.
 
-Estas son las motivaciones detrás de esta encuesta. Tener nuestro propio dataset, compartir los resultados y los datos, para que todos los entusiastas de RRHH y los datos cuenten con una fuente de datos para practicar.
+Estas son las motivaciones detrás de esta encuesta. Tener nuestro propio dataset, compartir los resultados y los datos, para que todos los entusiastas de RRHH y de los datos cuenten con una fuente de datos para practicar.
 
 > Si querés conocer la historia detrás del nombre de la encuesta, la podés [conocer aquí](https://r4hr.club/why-kiwi/).
 
@@ -436,7 +436,7 @@ ggplot(nombres, aes(x = rtas, y = reorder(nombre,rtas))) +
 En total, encontramos `r distintos` formas diferentes de llamar al área. Tristemente nos sorprende la cantidad de veces que encontramos que el área aún se llama *Oficina De Personal*.
 
 
-```{r nombre-area-tabla, echo=FALSE}
+```{r nombre-area-tabla, echo=FALSE, out.widht="80%"}
 gt(nombres) %>% 
   cols_label(nombre = "Nombre del Área",
              rtas = "Respuestas")
@@ -447,7 +447,7 @@ gt(nombres) %>%
 class: inverse, center, middle
 
 ## Seguinos en nuestras redes
-### [link.tree/r4hrclub](https://www.linktr.ee/r4hrclub) `r emo::ji("artificial_satellite")`
+### [link.tree/r4hrclub](https://www.linktr.ee/r4hrclub) `r emo::ji("satellite")`
 <img src="https://media.giphy.com/media/93fsZ7rI488L908x0T/giphy.gif" />
 
 
