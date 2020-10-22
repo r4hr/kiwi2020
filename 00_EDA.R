@@ -3,7 +3,6 @@
 # Verde Club: #009204
 # Azul Club: #344D7E
 
-
 # Paquetes y opciones -------------------------------------
 
 library(tidyverse)
@@ -242,15 +241,15 @@ funModeling::profiling_num(sueldos_dolar)
 # podamos todo lo que esté fuera de ese rango
 
 mediana_pais <- sueldos_dolar %>% 
-  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"),
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay", "Perú"),
          between(sueldo_dolar,400,3000)) %>% 
   group_by(pais) %>% 
   summarise(sueldop = list(mean_se(sueldo_dolar)),
             cant = sum(cuenta)) %>% 
   unnest(cols = c(sueldop)) %>%
-  print(n = nrow(.)) %>% 
-  filter(cant>4)
-
+  filter(cant>4) %>% 
+  print(n = nrow(.)) 
+ 
 sueldo_dolar_pais <- sueldos_dolar %>% 
   filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"), 
          between(sueldo_dolar, 400,3000))
@@ -273,7 +272,7 @@ ggplot(mediana_pais, aes(x = reorder(pais, -y), y =  y))+
   geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
   geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), 
              alpha = 0.3, size = 2, color = "#75838F")+
-  geom_text(aes(label = round(x=y, 0), vjust = -0.5, fontface = "bold"), color = "black")+
+  geom_text(aes(label = round(x=y, 0), vjust = 1.5, fontface = "bold"), color = "white")+
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
   labs(title = "Mediana salarial por país",
        subtitle = "Sueldos de RRHH en U$S",
@@ -397,4 +396,34 @@ lideres_genero %>%
        x = "", y = "", fill = "", 
        caption = fuente)
 
-  
+# Nombres de RRHH --------------------------------------------------------
+
+nombres <- kiwi[ , 32]
+
+nombres <- nombres %>% 
+  rename(nombre = `¿Cómo se llama el área en tu empresa?`) %>% 
+  filter(!is.na(nombre))
+
+nombres %>% 
+  group_by(nombre) %>% 
+  count(sort = T) %>% 
+  print(n = nrow(.))
+
+distintos <- distinct(.data = nombres) %>% count() %>% pull()
+
+nombres <- nombres %>% 
+  mutate(nombre = str_to_title(nombre, locale = "es")) %>% 
+  group_by(nombre) %>% 
+  count(sort = T, name = "rtas") %>% 
+  head(10) %>% 
+  ungroup()
+
+nombres
+
+ggplot(nombres, aes(x = rtas, y = reorder(nombre,rtas))) +
+  geom_col(fill = "#344D7E") +
+  estilo +
+  labs(title = "Top 10 de nombres para el área de RRHH", 
+       x = "", y = "", caption = fuente)
+
+

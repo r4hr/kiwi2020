@@ -190,7 +190,7 @@ ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
   geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
   geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), 
              alpha = 0.3, size = 2, color = "#75838F")+
-  geom_text(aes(label = round(x=y, 0), vjust = -0.5, fontface = "bold"), color = "black")+
+  geom_text(aes(label = round(x=y, 0), vjust = 1.5, fontface = "bold"), color = "white")+
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
   labs(title = "Mediana salarial por país",
        subtitle = "Sueldos de RRHH en U$S",
@@ -204,7 +204,7 @@ ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
 
 .pull-right[
 **Aclaraciones:** 
-1. Los resultados no son representativos dada la baja cantidad de respuestas (cada punto representa una respuesta).
+1. Los resultados **no son representativos en absoluto** dada la baja cantidad de respuestas (cada punto representa una respuesta).
 2. Para la comparación de los sueldos en dólares estadounidenses tomamos el tipo de cambio de cada país al 19 de octubre de 2020 publicados por los respectivos bancos centrales.
 3. Sólo mostramos resultados de los países con al menos 5 respuestas.
 4. Podamos los sueldos para mostrar aquellos que están dentro de los percentiles 5 y 95.
@@ -400,3 +400,75 @@ preg %>%
 ```
 
 ]
+
+---
+# ¿Cómo se llama el área?
+
+.pull-left[
+```{r nombre-area-plot, echo=FALSE, dpi=300}
+nombres <- kiwi[ , 32]
+
+nombres <- nombres %>% 
+  rename(nombre = `¿Cómo se llama el área en tu empresa?`) %>% 
+  filter(!is.na(nombre))
+
+distintos <- distinct(.data = nombres) %>% count() %>% pull()
+
+nombres <- nombres %>% 
+  mutate(nombre = str_to_title(nombre, locale = "es")) %>% 
+  group_by(nombre) %>% 
+  count(sort = T, name = "rtas") %>% 
+  head(10) %>% 
+  ungroup()
+
+
+ggplot(nombres, aes(x = rtas, y = reorder(nombre,rtas))) +
+  geom_col(fill = "#344D7E") +
+  estilo +
+  labs(title = "Top 10 de nombres para el área de RRHH", 
+       x = "", y = "", caption = fuente)
+```
+
+]
+
+.pull-right[
+
+En total, encontramos `r distintos` formas diferentes de llamar al área. Tristemente nos sorprende la cantidad de veces que encontramos que el área aún se llama *Oficina De Personal*.
+
+
+```{r nombre-area-tabla, echo=FALSE}
+gt(nombres) %>% 
+  cols_label(nombre = "Nombre del Área",
+             rtas = "Respuestas")
+```
+
+]
+---
+class: inverse, center, middle
+
+## Seguinos en nuestras redes
+### [link.tree/r4hrclub](https://www.linktr.ee/r4hrclub) `r emo::ji("artificial_satellite")`
+<img src="https://media.giphy.com/media/93fsZ7rI488L908x0T/giphy.gif" />
+
+
+
+---
+
+# Paquetes utilizados
+
+* [ggplot2](https://ggplot2.tidyverse.org): H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016.
+* [tidyverse](https://doi.org/10.21105/joss.01686): Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686
+* [funModeling](https://CRAN.R-project.org/package=funModeling): Pablo Casas (2020). funModeling: Exploratory Data Analysis and Data Preparation Tool-Box. R package version 1.9.4.
+* [ggthemes](https://CRAN.R-project.org/package=ggthemes): Jeffrey B. Arnold (2019). ggthemes: Extra Themes, Scales and Geoms for 'ggplot2'. R package version 4.2.0.
+* [gargle](https://CRAN.R-project.org/package=gargle): Jennifer Bryan, Craig Citro and Hadley Wickham (2020). gargle: Utilities for Working with Google APIs. R package version 0.5.0.
+* [googlesheets4](https://CRAN.R-project.org/package=googlesheets4): Jennifer Bryan (2020). googlesheets4: Access Google Sheets using the Sheets API V4. R package version 0.2.0.
+* [gt](https://CRAN.R-project.org/package=gt): Richard Iannone, Joe Cheng and Barret Schloerke (2020). gt: Easily Create Presentation-Ready Display Tables. R package version 0.2.2.
+* [scales](https://CRAN.R-project.org/package=scales): Hadley Wickham and Dana Seidel (2020). scales: Scale Functions for Visualization. R package version 1.1.1.
+* [extrafont](https://CRAN.R-project.org/package=extrafont): Winston Chang, (2014). extrafont: Tools for using fonts. R package version 0.17.
+---
+class: inverse, center, bottom
+
+Presentación realizada con el paquete [Xaringan](https://github.com/yihui/xaringan) desarrollado por Yihui Xie.
+
+Gracias a [Patricia Loto](https://twitter.com/patriloto) por compartir el [tutorial](https://twitter.com/patriloto/status/1260822644590608391?s=20)
+
