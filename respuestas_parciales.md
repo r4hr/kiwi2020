@@ -70,7 +70,7 @@ Lombraña](https://www.linkedin.com/in/santiago-lardone-quinodoz-978588167/)
 
 # Respuestas parciales
 
-<img src="https://media.giphy.com/media/xThtalkAxYnZd94uB2/giphy.gif" />
+<img src="https://media.giphy.com/media/xThtalkAxYnZd94uB2/giphy.gif"/>
 
 El 12 de noviembre publicamos los resultados finales.
 
@@ -84,7 +84,7 @@ El 12 de noviembre publicamos los resultados finales.
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#avxjwqlefs .gt_table {
+#dgihmfbysk .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -109,7 +109,7 @@ El 12 de noviembre publicamos los resultados finales.
   border-left-color: #D3D3D3;
 }
 
-#avxjwqlefs .gt_heading {
+#dgihmfbysk .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -121,7 +121,7 @@ El 12 de noviembre publicamos los resultados finales.
   border-right-color: #D3D3D3;
 }
 
-#avxjwqlefs .gt_title {
+#dgihmfbysk .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -131,7 +131,7 @@ El 12 de noviembre publicamos los resultados finales.
   border-bottom-width: 0;
 }
 
-#avxjwqlefs .gt_subtitle {
+#dgihmfbysk .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -141,13 +141,13 @@ El 12 de noviembre publicamos los resultados finales.
   border-top-width: 0;
 }
 
-#avxjwqlefs .gt_bottom_border {
+#dgihmfbysk .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#avxjwqlefs .gt_col_headings {
+#dgihmfbysk .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -162,7 +162,7 @@ El 12 de noviembre publicamos los resultados finales.
   border-right-color: #D3D3D3;
 }
 
-#avxjwqlefs .gt_col_heading {
+#dgihmfbysk .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -182,7 +182,7 @@ El 12 de noviembre publicamos los resultados finales.
   overflow-x: hidden;
 }
 
-#avxjwqlefs .gt_column_spanner_outer {
+#dgihmfbysk .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -194,15 +194,15 @@ El 12 de noviembre publicamos los resultados finales.
   padding-right: 4px;
 }
 
-#avxjwqlefs .gt_column_spanner_outer:first-child {
+#dgihmfbysk .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#avxjwqlefs .gt_column_spanner_outer:last-child {
+#dgihmfbysk .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#avxjwqlefs .gt_column_spanner {
+#dgihmfbysk .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -214,7 +214,7 @@ El 12 de noviembre publicamos los resultados finales.
   width: 100%;
 }
 
-#avxjwqlefs .gt_group_heading {
+#dgihmfbysk .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -236,7 +236,7 @@ El 12 de noviembre publicamos los resultados finales.
   vertical-align: middle;
 }
 
-#avxjwqlefs .gt_empty_group_heading {
+#dgihmfbysk .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -251,15 +251,15 @@ El 12 de noviembre publicamos los resultados finales.
   vertical-align: middle;
 }
 
-#avxjwqlefs .gt_from_md > :first-child {
+#dgihmfbysk .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#avxjwqlefs .gt_from_md > :last-child {
+#dgihmfbysk .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#avxjwqlefs .gt_row {
+#dgihmfbysk .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -278,7 +278,7 @@ El 12 de noviembre publicamos los resultados finales.
   overflow-x: hidden;
 }
 
-#avxjwqlefs .gt_stub {
+#dgihmfbysk .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -290,7 +290,7 @@ El 12 de noviembre publicamos los resultados finales.
   padding-left: 12px;
 }
 
-#avxjwqlefs .gt_summary_row {
+#dgihmfbysk .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -300,7 +300,7 @@ El 12 de noviembre publicamos los resultados finales.
   padding-right: 5px;
 }
 
-#avxjwqlefs .gt_first_summary_row {
+#dgihmfbysk .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -310,7 +310,7 @@ El 12 de noviembre publicamos los resultados finales.
   border-top-color: #D3D3D3;
 }
 
-#avxjwqlefs .gt_grand_summary_row {
+#dgihmfbysk .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -320,7 +320,7 @@ El 12 de noviembre publicamos los resultados finales.
   padding-right: 5px;
 }
 
-#avxjwqlefs .gt_first_grand_summary_row {
+#dgihmfbysk .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -330,11 +330,11 @@ El 12 de noviembre publicamos los resultados finales.
   border-top-color: #D3D3D3;
 }
 
-#avxjwqlefs .gt_striped {
+#dgihmfbysk .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#avxjwqlefs .gt_table_body {
+#dgihmfbysk .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -343,7 +343,7 @@ El 12 de noviembre publicamos los resultados finales.
   border-bottom-color: #D3D3D3;
 }
 
-#avxjwqlefs .gt_footnotes {
+#dgihmfbysk .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -357,13 +357,13 @@ El 12 de noviembre publicamos los resultados finales.
   border-right-color: #D3D3D3;
 }
 
-#avxjwqlefs .gt_footnote {
+#dgihmfbysk .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#avxjwqlefs .gt_sourcenotes {
+#dgihmfbysk .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -377,47 +377,47 @@ El 12 de noviembre publicamos los resultados finales.
   border-right-color: #D3D3D3;
 }
 
-#avxjwqlefs .gt_sourcenote {
+#dgihmfbysk .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#avxjwqlefs .gt_left {
+#dgihmfbysk .gt_left {
   text-align: left;
 }
 
-#avxjwqlefs .gt_center {
+#dgihmfbysk .gt_center {
   text-align: center;
 }
 
-#avxjwqlefs .gt_right {
+#dgihmfbysk .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#avxjwqlefs .gt_font_normal {
+#dgihmfbysk .gt_font_normal {
   font-weight: normal;
 }
 
-#avxjwqlefs .gt_font_bold {
+#dgihmfbysk .gt_font_bold {
   font-weight: bold;
 }
 
-#avxjwqlefs .gt_font_italic {
+#dgihmfbysk .gt_font_italic {
   font-style: italic;
 }
 
-#avxjwqlefs .gt_super {
+#dgihmfbysk .gt_super {
   font-size: 65%;
 }
 
-#avxjwqlefs .gt_footnote_marks {
+#dgihmfbysk .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
 
-<div id="avxjwqlefs" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="dgihmfbysk" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 
 <table class="gt_table">
 
@@ -477,7 +477,7 @@ Argentina
 
 <td class="gt_row gt_right">
 
-565
+572
 
 </td>
 
@@ -535,7 +535,7 @@ Paraguay
 
 <td class="gt_row gt_left">
 
-Uruguay
+México
 
 </td>
 
@@ -551,13 +551,13 @@ Uruguay
 
 <td class="gt_row gt_left">
 
-México
+Uruguay
 
 </td>
 
 <td class="gt_row gt_right">
 
-6
+8
 
 </td>
 
@@ -587,19 +587,22 @@ Perú
 
 <!--/html_preserve-->
 
-Recibimos un total de 632 respuestas 🎂.
+Recibimos un total de 641 respuestas 🎉:trophy:.
 
 # Comparación de sueldos de RRHH por países
 
 ![](respuestas_parciales_files/figure-gfm/sueldos_dolar-1.png)<!-- -->
 
-**Aclaraciones:** 1. Los resultados no son representativos dada la baja
-cantidad de respuestas (cada punto representa una respuesta). 2. Para la
-comparación de los sueldos en dólares estadounidenses tomamos el tipo de
-cambio de cada país al 19 de octubre de 2020 publicados por los
-respectivos bancos centrales. 3. Sólo mostramos resultados de los países
-con al menos 5 respuestas. 4. Podamos los sueldos para mostrar aquellos
-que están dentro de los percentiles 5 y 95.
+**Aclaraciones:**
+
+1.  Los resultados no son representativos dada la baja cantidad de
+    respuestas (cada punto representa una respuesta).
+2.  Para la comparación de los sueldos en dólares estadounidenses
+    tomamos el tipo de cambio de cada país al 19 de octubre de 2020
+    publicados por los respectivos bancos centrales.
+3.  Sólo mostramos resultados de los países con al menos 5 respuestas.
+4.  Podamos los sueldos para mostrar aquellos que están dentro de los
+    percentiles 5 y 95.
 
 # Representación de mujeres en puestos de liderazgo
 
@@ -613,7 +616,7 @@ que están dentro de los percentiles 5 y 95.
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#slzhmrymxt .gt_table {
+#zxuybdqxxg .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -638,7 +641,7 @@ que están dentro de los percentiles 5 y 95.
   border-left-color: #D3D3D3;
 }
 
-#slzhmrymxt .gt_heading {
+#zxuybdqxxg .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -650,7 +653,7 @@ que están dentro de los percentiles 5 y 95.
   border-right-color: #D3D3D3;
 }
 
-#slzhmrymxt .gt_title {
+#zxuybdqxxg .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -660,7 +663,7 @@ que están dentro de los percentiles 5 y 95.
   border-bottom-width: 0;
 }
 
-#slzhmrymxt .gt_subtitle {
+#zxuybdqxxg .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -670,13 +673,13 @@ que están dentro de los percentiles 5 y 95.
   border-top-width: 0;
 }
 
-#slzhmrymxt .gt_bottom_border {
+#zxuybdqxxg .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#slzhmrymxt .gt_col_headings {
+#zxuybdqxxg .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -691,7 +694,7 @@ que están dentro de los percentiles 5 y 95.
   border-right-color: #D3D3D3;
 }
 
-#slzhmrymxt .gt_col_heading {
+#zxuybdqxxg .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -711,7 +714,7 @@ que están dentro de los percentiles 5 y 95.
   overflow-x: hidden;
 }
 
-#slzhmrymxt .gt_column_spanner_outer {
+#zxuybdqxxg .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -723,15 +726,15 @@ que están dentro de los percentiles 5 y 95.
   padding-right: 4px;
 }
 
-#slzhmrymxt .gt_column_spanner_outer:first-child {
+#zxuybdqxxg .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#slzhmrymxt .gt_column_spanner_outer:last-child {
+#zxuybdqxxg .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#slzhmrymxt .gt_column_spanner {
+#zxuybdqxxg .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -743,7 +746,7 @@ que están dentro de los percentiles 5 y 95.
   width: 100%;
 }
 
-#slzhmrymxt .gt_group_heading {
+#zxuybdqxxg .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -765,7 +768,7 @@ que están dentro de los percentiles 5 y 95.
   vertical-align: middle;
 }
 
-#slzhmrymxt .gt_empty_group_heading {
+#zxuybdqxxg .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -780,15 +783,15 @@ que están dentro de los percentiles 5 y 95.
   vertical-align: middle;
 }
 
-#slzhmrymxt .gt_from_md > :first-child {
+#zxuybdqxxg .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#slzhmrymxt .gt_from_md > :last-child {
+#zxuybdqxxg .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#slzhmrymxt .gt_row {
+#zxuybdqxxg .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -807,7 +810,7 @@ que están dentro de los percentiles 5 y 95.
   overflow-x: hidden;
 }
 
-#slzhmrymxt .gt_stub {
+#zxuybdqxxg .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -819,7 +822,7 @@ que están dentro de los percentiles 5 y 95.
   padding-left: 12px;
 }
 
-#slzhmrymxt .gt_summary_row {
+#zxuybdqxxg .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -829,7 +832,7 @@ que están dentro de los percentiles 5 y 95.
   padding-right: 5px;
 }
 
-#slzhmrymxt .gt_first_summary_row {
+#zxuybdqxxg .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -839,7 +842,7 @@ que están dentro de los percentiles 5 y 95.
   border-top-color: #D3D3D3;
 }
 
-#slzhmrymxt .gt_grand_summary_row {
+#zxuybdqxxg .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -849,7 +852,7 @@ que están dentro de los percentiles 5 y 95.
   padding-right: 5px;
 }
 
-#slzhmrymxt .gt_first_grand_summary_row {
+#zxuybdqxxg .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -859,11 +862,11 @@ que están dentro de los percentiles 5 y 95.
   border-top-color: #D3D3D3;
 }
 
-#slzhmrymxt .gt_striped {
+#zxuybdqxxg .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#slzhmrymxt .gt_table_body {
+#zxuybdqxxg .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -872,7 +875,7 @@ que están dentro de los percentiles 5 y 95.
   border-bottom-color: #D3D3D3;
 }
 
-#slzhmrymxt .gt_footnotes {
+#zxuybdqxxg .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -886,13 +889,13 @@ que están dentro de los percentiles 5 y 95.
   border-right-color: #D3D3D3;
 }
 
-#slzhmrymxt .gt_footnote {
+#zxuybdqxxg .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#slzhmrymxt .gt_sourcenotes {
+#zxuybdqxxg .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -906,47 +909,47 @@ que están dentro de los percentiles 5 y 95.
   border-right-color: #D3D3D3;
 }
 
-#slzhmrymxt .gt_sourcenote {
+#zxuybdqxxg .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#slzhmrymxt .gt_left {
+#zxuybdqxxg .gt_left {
   text-align: left;
 }
 
-#slzhmrymxt .gt_center {
+#zxuybdqxxg .gt_center {
   text-align: center;
 }
 
-#slzhmrymxt .gt_right {
+#zxuybdqxxg .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#slzhmrymxt .gt_font_normal {
+#zxuybdqxxg .gt_font_normal {
   font-weight: normal;
 }
 
-#slzhmrymxt .gt_font_bold {
+#zxuybdqxxg .gt_font_bold {
   font-weight: bold;
 }
 
-#slzhmrymxt .gt_font_italic {
+#zxuybdqxxg .gt_font_italic {
   font-style: italic;
 }
 
-#slzhmrymxt .gt_super {
+#zxuybdqxxg .gt_super {
   font-size: 65%;
 }
 
-#slzhmrymxt .gt_footnote_marks {
+#zxuybdqxxg .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
 
-<div id="slzhmrymxt" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="zxuybdqxxg" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 
 <table class="gt_table">
 
@@ -1010,13 +1013,13 @@ Femenino
 
 <td class="gt_row gt_center">
 
-375
+380
 
 </td>
 
 <td class="gt_row gt_center">
 
-67.1%
+66.9%
 
 </td>
 
@@ -1032,13 +1035,13 @@ Masculino
 
 <td class="gt_row gt_center">
 
-181
+185
 
 </td>
 
 <td class="gt_row gt_center">
 
-32.4%
+32.6%
 
 </td>
 
@@ -1118,10 +1121,10 @@ son mujeres.
 Para los puestos de liderazgo consideramos las personas en los puestos
 de *Director, Gerente, Jefe, Responsable,* y *Supervisor*.
 
-Del total de mujeres, 375 respuestas, 161 ocupan un puesto de liderazgo
+Del total de mujeres, 380 respuestas, 163 ocupan un puesto de liderazgo
 (42.9%).
 
-Del total de hombres, 181 respuestas, 92 ocupan un puesto de liderazgo
+Del total de hombres, 185 respuestas, 94 ocupan un puesto de liderazgo
 (50.8%).
 
 ![](respuestas_parciales_files/figure-gfm/genero-lideres-plot-1.png)<!-- -->

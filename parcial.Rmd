@@ -105,6 +105,8 @@ estilo <- theme(panel.grid = element_blank(),
                 panel.background = element_blank(),
                 text = element_text(family = "Roboto"))
 
+fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
+
 kiwi <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
 
 paises <- kiwi %>% 
@@ -119,7 +121,7 @@ gt(paises) %>%
   tab_header(title = "Cantidad de respuestas por país",
              subtitle = "Países con más de 5 respuestas") 
 ```
-
+<br>
 Recibimos un total de `r nrow(kiwi)` respuestas `r emo::ji("party")`.
 
 ---
@@ -251,7 +253,7 @@ ggplot(div, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=genero)) +
         text = element_text(family = "Roboto")) +
   labs(title = "Cantidad de respuestas según género",
        fill = "Género", 
-       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
+       caption = fuente)
 ```
 
 ]
@@ -331,6 +333,68 @@ lideres_genero %>%
   labs(title = "Proporción de Líderes según género",
        x = "", y = "", fill = "", 
        caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
+```
+
+]
+
+---
+# Preguntas Random
+## "¿Pensás tener hijos?"
+
+Cuando diseñamos esta encuesta, nos pareció una buena idea preguntar sobre cuáles fueron las preguntas más desubicadas o bizarras que realizada en una entrevista laboral. Pero nunca nos imaginamos que íbamos a necesitar filtrar por [**chongo**](https://www.serargentino.com/gente/como-hablamos/que-es-un-chongo).
+
+```{r biz,echo=TRUE}
+preg <- kiwi[,c(2,41)] 
+
+names(preg) <- c("genero", "pregunta")
+
+listado_preg <- preg %>% 
+  filter(str_detect(pregunta, "hijo[s]")|
+           str_detect(pregunta, "casad[ao]|casar")| 
+           str_detect(pregunta,"novio")|
+           str_detect(pregunta,"chongo")) #<<
+```
+
+Esta es la pregunta original. Sin palabras:
+> **`r listado_preg[8,2]`** `r emo::ji("scream")`
+
+---
+# Preguntas Random
+## "¿Pensás tener hijos?"
+
+.pull-left[Al respecto quisimos saber a cuántas mujeres y hombres les habían hecho preguntas desubicadas sobre si tendrían hijos, o si tenían planes de casamiento. En `r nrow(listado_preg)` respuestas esto es lo que encontramos:
+```{r bizar, echo = FALSE}
+gt(preg %>% 
+  filter(str_detect(pregunta, "hijo[s]")|
+           str_detect(pregunta, "casad[ao]|casar")| 
+           str_detect(pregunta,"novio")|
+           str_detect(pregunta,"chongo")) %>% 
+  group_by(genero) %>% 
+  summarise (n = n()) %>% 
+  mutate(freq = percent(n/sum(n)))) %>% 
+  cols_label(genero = "Género", 
+             n = "Cantidad",
+             freq = "Porcentaje")
+```
+]
+
+.pull-right[
+```{r bizar-plot, echo=FALSE, out.width="85%", dpi=300}
+preg %>% 
+  filter(str_detect(pregunta, "hijo[s]")|
+           str_detect(pregunta, "casad[ao]|casar")| 
+           str_detect(pregunta,"novio")|
+           str_detect(pregunta,"chongo")) %>% 
+  group_by(genero) %>% 
+  summarise (n = n()) %>% 
+  mutate(freq = percent(n/sum(n))) %>% 
+  ggplot(aes(x = genero, y = n, fill = genero)) +
+  geom_col() +
+  scale_fill_manual(values = c("#8624F5", "#1FC3AA")) +
+  estilo + theme(legend.position = "none") +
+  labs(title = "Mujeres y hombres a los que les preguntaron si pensaban tener hijos \n o si planeaban casarse en una entrevista laboral",
+       x = "", y= "", fill = "",
+       caption = fuente)
 ```
 
 ]

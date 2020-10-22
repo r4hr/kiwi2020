@@ -26,6 +26,9 @@ estilo <- theme(panel.grid = element_blank(),
 
 genero <- c("#8624F5", "#1FC3AA", "#FFD129", "#75838F") #Violeta - Verde - Amarillo - Gris
 
+fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
+
+
 # Carga de datos ------------------------------------------
 
 
@@ -137,15 +140,21 @@ preg <- kiwi[,c(2,41)]
 
 names(preg) <- c("genero", "pregunta")
 
-preg %>% 
-  filter(str_detect(pregunta, "hijo[s]")|str_detect(pregunta, "casad[ao]|casar")) %>% 
+listado_preg <- preg %>% 
+  filter(str_detect(pregunta, "hijo[s]")|
+           str_detect(pregunta, "casad[ao]|casar")| 
+           str_detect(pregunta,"novio")|
+           str_detect(pregunta,"chongo")) %>% 
   print(n=nrow(.))
 
 preg %>% 
-  filter(str_detect(pregunta, "hijo[s]")|str_detect(pregunta, "casad[ao]|casar")) %>% 
+  filter(str_detect(pregunta, "hijo[s]")|
+           str_detect(pregunta, "casad[ao]|casar")| 
+           str_detect(pregunta,"novio")|
+           str_detect(pregunta,"chongo")) %>% 
   group_by(genero) %>% 
   summarise (n = n()) %>% 
-  mutate(freq = n/sum(n)) 
+  mutate(freq = percent(n/sum(n)))
 
 #### Wordcloud ####
 
@@ -322,7 +331,7 @@ ggplot(div, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=genero)) +
         text = element_text(family = "Roboto")) +
   labs(title = "Cantidad de respuestas según género",
        fill = "Género", 
-       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
+       caption = fuente)
 
 # Tabla de distribución de género
 gt(div %>% select(genero, n, freq)) %>% 
@@ -386,6 +395,6 @@ lideres_genero %>%
   scale_fill_manual(values = c("#344D7E", "#75838F")) +
   labs(title = "Proporción de Líderes según género",
        x = "", y = "", fill = "", 
-       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
+       caption = fuente)
 
   

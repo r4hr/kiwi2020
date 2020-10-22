@@ -92,7 +92,7 @@ gt(paises) %>%
              subtitle = "Países con más de 5 respuestas") 
 ```
 
-Recibimos un total de `r nrow(kiwi)` respuestas `r emo::ji("party")`.
+Recibimos un total de `r nrow(kiwi)` respuestas `r emo::ji("party")`:trophy:.
 
 # Comparación de sueldos de RRHH por países
 
