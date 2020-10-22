@@ -21,6 +21,35 @@ knitr::opts_chunk$set(fig.retina = 3, warning = FALSE, message = FALSE)
 ```
 
 
+```{r metathis, echo=FALSE}
+library(metathis)
+meta() %>%
+  meta_name("github-repo" = "r4hr/kiwi2020") %>% 
+  meta_social(
+    title = "Encuesta KIWI de Sueldos de RRHH de LATAM",
+    description = paste(
+      "Respuestas parciales de la 1° Encuesta KIWI de Sueldos de RRHH de LATAM",
+      "Desarrollado por el Club de R para RRHH."
+    ),
+    url = "https://kiwi-parcial.netlify.app/",
+    image = "kiwi-cover.png",
+    image_alt = paste(
+      "Encuesta KIWI de Sueldos de RRHH de LATAM:", 
+      "Respuestas parciales de algunas preguntas de la 1° Encuesta KIWI de Sueldos de RRHH de LATAM", 
+      "desarrollada por el Club de R para RRHH"
+    ),
+    og_type = "website",
+    og_author = "Sergio Garcia Mora",
+    twitter_card_type = "summary_large_image",
+    twitter_creator = "@sergiogarciamor",
+    twitter_site = "@rrhh_club"
+  )
+```
+
+```{r xaringanExtra-share-again, echo=FALSE}
+xaringanExtra::use_share_again()
+```
+
 ???
 
 Image credit: [Designed by Freepik]("http://www.freepik.com")
@@ -75,6 +104,15 @@ background-color: "#5d6d7e"
 ]
 
 .pull-right[<img src="kiwi-happy.jpg"  />]
+---
+background-color: "#5d6d7e" 
+# Completá la encuesta
+
+.pull-left[<img src="https://media.giphy.com/media/kjfHMdG6Y3LP2/giphy.gif" />]
+
+.pull-right[
+### Completá la encuesta en [este link](https://bit.ly/sueldos-rh)
+]
 
 ---
 class: inverse, center, middle
@@ -187,10 +225,10 @@ sueldo_dolar_pais <- sueldos_dolar %>%
 
 ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
   geom_col(fill = "#344D7E", alpha = 0.85) +
-  geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
+  geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#333e47")+
   geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), 
              alpha = 0.3, size = 2, color = "#75838F")+
-  geom_text(aes(label = round(x=y, 0), vjust = 1.5, fontface = "bold"), color = "white")+
+  geom_text(aes(label = round(x=y, 0), vjust = 1.5, fontface = "bold"), size = 5, color = "white")+
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
   labs(title = "Mediana salarial por país",
        subtitle = "Sueldos de RRHH en U$S",
@@ -436,7 +474,7 @@ ggplot(nombres, aes(x = rtas, y = reorder(nombre,rtas))) +
 En total, encontramos `r distintos` formas diferentes de llamar al área. Tristemente nos sorprende la cantidad de veces que encontramos que el área aún se llama *Oficina De Personal*.
 
 
-```{r nombre-area-tabla, echo=FALSE, out.widht="80%"}
+```{r nombre-area-tabla, echo=FALSE, out.width="80%"}
 gt(nombres) %>% 
   cols_label(nombre = "Nombre del Área",
              rtas = "Respuestas")

@@ -272,7 +272,7 @@ ggplot(mediana_pais, aes(x = reorder(pais, -y), y =  y))+
   geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
   geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), 
              alpha = 0.3, size = 2, color = "#75838F")+
-  geom_text(aes(label = round(x=y, 0), vjust = 1.5, fontface = "bold"), color = "white")+
+  geom_text(aes(label = round(x=y, 0), vjust = 1.5, fontface = "bold"),size = 4, color = "white")+
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
   labs(title = "Mediana salarial por país",
        subtitle = "Sueldos de RRHH en U$S",
