@@ -138,6 +138,7 @@ library(gargle)
 library(gt)
 library(extrafont)
 library(scales)
+library(ggalt)
 
 options(scipen = 999)
 
@@ -150,6 +151,8 @@ estilo <- theme(panel.grid = element_blank(),
                 text = element_text(family = "Roboto"))
 
 fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
+
+colores <-  c("#8624F5", "#1FC3AA")
 
 kiwi <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
 
@@ -352,9 +355,9 @@ De acuerdo a las respuestas recolectadas **2 de cada 3** participantes son mujer
 
 Para los puestos de liderazgo consideramos las personas en los puestos de *Director, Gerente, Jefe, Responsable,* y *Supervisor*.
 
-Del total de mujeres, `r lideres_genero[1,3]` respuestas, `r lideres_genero[1,2]` ocupan un puesto de liderazgo (`r lideres_genero[1, 4]`).
+Del total de **mujeres**, `r lideres_genero[1,3]` respuestas, `r lideres_genero[1,2]` ocupan un puesto de liderazgo (`r lideres_genero[1, 4]`).
 
-Del total de hombres, `r lideres_genero[2, 3]` respuestas, `r lideres_genero[2,2]` ocupan un puesto de liderazgo (`r lideres_genero[2, 4]`).
+Del total de **hombres**, `r lideres_genero[2, 3]` respuestas, `r lideres_genero[2,2]` ocupan un puesto de liderazgo (`r lideres_genero[2, 4]`).
 
 ]
 
@@ -378,6 +381,68 @@ lideres_genero %>%
        x = "", y = "", fill = "", 
        caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
 ```
+
+]
+
+---
+# Brecha salarial entre hombres y mujeres
+
+.pull-left[
+```{r brecha, echo=FALSE, dpi=300}
+liderazgo <- kiwi %>% 
+  select(Género, `¿En qué puesto trabajás?`,`País en el que trabajas` ,`¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
+
+names(liderazgo) <- c("genero", "puesto","pais", "sueldo")
+
+liderazgo <- liderazgo %>% 
+  filter(!is.na(puesto)) %>% 
+  mutate(sueldo = as.numeric(unlist(sueldo)),
+         cuenta = 1) %>% 
+  filter(pais == "Argentina")
+
+
+brecha <- liderazgo %>% 
+  filter(genero %in% c("Femenino", "Masculino"), 
+         puesto %in% c("Director", "Gerente", "HRBP","Responsable", "Analista", "Administrativo")) %>% 
+  mutate(puesto = factor(puesto, levels = c("Administrativo","Analista", 
+                                            "HRBP", "Responsable","Gerente","Director" ))) %>% 
+  select(-pais) %>% 
+  group_by(genero, puesto) %>% 
+  summarise(media_salarial = mean(sueldo))
+
+
+
+brecha_graf <- brecha %>% 
+  pivot_wider(., names_from = genero, values_from = media_salarial) %>% 
+  mutate(brecha = percent((Masculino-Femenino)/Masculino, 1),
+         x = (Masculino + Femenino)/2)
+
+ggplot(brecha_graf, 
+       aes(x = Femenino, xend = Masculino, y = puesto, 
+           group = puesto, label = brecha)) +
+  geom_dumbbell(color = "#808080",
+                size_x = 3, size_xend = 3,
+                colour_x = colores[1],
+                colour_xend = colores[2]) +
+  geom_text(data = brecha_graf, 
+            aes(x, puesto, label = brecha), nudge_y = .2) +
+  labs(title = "Brecha salarial por puestos de RRHH",
+       subtitle = "Sueldos promedios en Argentina",
+       x = "",
+       y = NULL, 
+       caption = fuente) +
+  scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ",")) +
+  scale_color_manual(values = colores) +
+  theme_minimal()+
+  theme(plot.background = element_rect(fill = "#fbfcfc"),
+        text = element_text(family = "Roboto"))
+```
+]
+
+.pull-right[
+En el único caso en que las mujeres tienen un sueldo promedio más alto que los hombres es en el puesto de *Director* de acuerdo a la muestra recolectada por nuestra encuesta.
+
+Agradecemos a [Natsumi Shokida](https://twitter.com/NatsuSh) por permitirnos replicar el gráfico de *"Brecha de ingresos mensuales por calificación del puesto de trabajo"* del informe ["La desigualdad de género se puede medir"](https://ecofeminita.github.io/EcoFemiData/informe_desigualdad_genero/trim_2019_03/informe.nb.html#) que realizan para Economía Femini(s)ta.
 
 ]
 
@@ -501,7 +566,7 @@ class: inverse, center, middle
 * [ggplot2](https://ggplot2.tidyverse.org): H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016.
 * [tidyverse](https://doi.org/10.21105/joss.01686): Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686
 * [funModeling](https://CRAN.R-project.org/package=funModeling): Pablo Casas (2020). funModeling: Exploratory Data Analysis and Data Preparation Tool-Box. R package version 1.9.4.
-* [ggthemes](https://CRAN.R-project.org/package=ggthemes): Jeffrey B. Arnold (2019). ggthemes: Extra Themes, Scales and Geoms for 'ggplot2'. R package version 4.2.0.
+* [ggalt](https://CRAN.R-project.org/package=ggalt): Bob Rudis, Ben Bolker and Jan Schulz (2017). ggalt: Extra Coordinate Systems, 'Geoms', Statistical Transformations, Scales and Fonts for 'ggplot2'. R package version 0.4.0.
 * [gargle](https://CRAN.R-project.org/package=gargle): Jennifer Bryan, Craig Citro and Hadley Wickham (2020). gargle: Utilities for Working with Google APIs. R package version 0.5.0.
 * [googlesheets4](https://CRAN.R-project.org/package=googlesheets4): Jennifer Bryan (2020). googlesheets4: Access Google Sheets using the Sheets API V4. R package version 0.2.0.
 * [gt](https://CRAN.R-project.org/package=gt): Richard Iannone, Joe Cheng and Barret Schloerke (2020). gt: Easily Create Presentation-Ready Display Tables. R package version 0.2.2.
