@@ -32,7 +32,7 @@ meta() %>%
       "Desarrollado por el Club de R para RRHH."
     ),
     url = "https://kiwi-parcial.netlify.app/",
-    image = "kiwi-cover.png",
+    image = "https://kiwi-parcial.netlify.app/kiwi-cover.png",
     image_alt = paste(
       "Encuesta KIWI de Sueldos de RRHH de LATAM:", 
       "Respuestas parciales de algunas preguntas de la 1° Encuesta KIWI de Sueldos de RRHH de LATAM", 
@@ -115,9 +115,7 @@ background-color: "#5d6d7e"
 .pull-right[
 ### Completá la encuesta en [este link](https://bit.ly/sueldos-rh)
 
---
-... dale... completala
-<img src="https://tenor.com/view/austin-powers-dr-evil-you-gif-5093201" />
+
 ]
 
 ---
