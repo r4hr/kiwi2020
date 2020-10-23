@@ -12,7 +12,7 @@ library(gt)
 library(extrafont)
 library(ggthemes)
 library(scales)
-
+library(ggalt)
 options(scipen = 999)
 
 loadfonts(quiet = TRUE)
@@ -257,18 +257,6 @@ sueldo_dolar_pais <- sueldos_dolar %>%
          between(sueldo_dolar, 400,3000))
   
 # Gráfico
-# Opción A
-ggplot(mediana_pais, aes(pais, y =  y))+
-  geom_col(fill = "#344D7E") +
-  geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
-  geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), alpha = 0.3, size = 3)+
-  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
-  labs(title = "Mediana salarial por país",
-       subtitle = "Sueldos de RRHH en U$S",
-       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con más de 5 respuestas",
-       x = "", y = "")
-
-# Opción B
 ggplot(mediana_pais, aes(x = reorder(pais, -y), y =  y))+
   geom_col(fill = "#344D7E", alpha = 0.85) +
   geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
@@ -427,6 +415,16 @@ ggplot(nombres, aes(x = rtas, y = reorder(nombre,rtas))) +
   estilo +
   labs(title = "Top 10 de nombres para el área de RRHH", 
        x = "", y = "", caption = fuente)
+
+gt(nombres) %>% 
+  cols_label(nombre = "Nombre del Área",
+             rtas = "Respuestas") %>% 
+  tab_style(style = list(
+    cell_fill = "#F8FF00"),
+    locations = cells_body(
+      columns = vars(nombre),
+      rows = nombre == "Oficina De Personal"
+    ))
 
 # Brecha salarial prueba -------------------------------------------------
 library(eph)

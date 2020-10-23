@@ -32,11 +32,11 @@ meta() %>%
       "Desarrollado por el Club de R para RRHH."
     ),
     url = "https://kiwi-parcial.netlify.app/",
-    image = "https://kiwi-parcial.netlify.app/kiwi-cover.png",
+    image = "kiwi-fondo.png",
     image_alt = paste(
       "Encuesta KIWI de Sueldos de RRHH de LATAM:", 
       "Respuestas parciales de algunas preguntas de la 1° Encuesta KIWI de Sueldos de RRHH de LATAM", 
-      "desarrollada por el Club de R para RRHH"
+      "Desarrollada por el Club de R para RRHH"
     ),
     og_type = "website",
     og_author = "Sergio Garcia Mora",
@@ -108,13 +108,16 @@ background-color: "#5d6d7e"
 .pull-right[<img src="kiwi-happy.jpg"  />]
 ---
 background-color: "#5d6d7e" 
-# Completá la encuesta
+# ¿Aún no completaste la encuesta?
 
 .pull-left[<img src="https://media.giphy.com/media/kjfHMdG6Y3LP2/giphy.gif" />]
 
 .pull-right[
+<br><br><br><br>
 ### Completá la encuesta en [este link](https://bit.ly/sueldos-rh)
 
+<br>
+### El tiempo aproximado para completarla es de 6'52" #chequeadísimo `r emo::ji("engineer")`
 
 ]
 
@@ -448,7 +451,7 @@ Agradecemos a [Natsumi Shokida](https://twitter.com/NatsuSh) por permitirnos rep
 
 ---
 # Preguntas Random
-## "¿Pensás tener hijos?"
+## "¿Pensás tener hijos?"/"¿Por qué no estás casada?"
 
 Cuando diseñamos esta encuesta, nos pareció una buena idea preguntar sobre cuáles fueron las preguntas más desubicadas o bizarras que realizada en una entrevista laboral. Pero nunca nos imaginamos que íbamos a necesitar filtrar por [**chongo**](https://www.serargentino.com/gente/como-hablamos/que-es-un-chongo).
 
@@ -469,7 +472,7 @@ Esta es la pregunta original. Sin palabras:
 
 ---
 # Preguntas Random
-## "¿Pensás tener hijos?"
+## "¿Pensás tener hijos?"/"¿Por qué no estás casada?"
 
 .pull-left[Al respecto quisimos saber a cuántas mujeres y hombres les habían hecho preguntas desubicadas sobre si tendrían hijos, o si tenían planes de casamiento. En `r nrow(listado_preg)` respuestas esto es lo que encontramos:
 ```{r bizar, echo = FALSE}
@@ -543,10 +546,16 @@ ggplot(nombres, aes(x = rtas, y = reorder(nombre,rtas))) +
 En total, encontramos `r distintos` formas diferentes de llamar al área. Tristemente nos sorprende la cantidad de veces que encontramos que el área aún se llama *Oficina De Personal*.
 
 
-```{r nombre-area-tabla, echo=FALSE, out.width="80%"}
+```{r nombre-area-tabla, echo=FALSE, out.width="70%"}
 gt(nombres) %>% 
   cols_label(nombre = "Nombre del Área",
-             rtas = "Respuestas")
+             rtas = "Respuestas") %>% 
+  tab_style(style = list(
+    cell_fill = "#F8FF00"),
+    locations = cells_body(
+      columns = vars(nombre),
+      rows = nombre == "Oficina De Personal"
+    ))
 ```
 
 ]
