@@ -283,8 +283,8 @@ kiwi %>%
 
 diversidad <- kiwi %>% 
   filter(Trabajo !="Freelance") %>% 
-  mutate(genero = fct_collapse(Género, 
-                               "No binario"= c("Género diverso (género diverso / género fluido /otras minorías)", "No binario")))
+  mutate(genero = fct_recode(Género, 
+                               "No binario"= c("Género diverso (género diverso / género fluido /otras minorías)")))
 
 div <- diversidad %>% 
 select(genero) %>% 
@@ -376,12 +376,12 @@ lideres_genero %>%
                names_to = "es_lider", 
                values_to = "valores") %>% 
   mutate(es_lider = factor(es_lider, 
-                           levels = c("porc_lider", "porc_no_lider"), 
-                           labels = c("Líder", "No Líder"))) %>% 
+                           levels = c("porc_no_lider", "porc_lider"), 
+                           labels = c("No Líder","Líder"))) %>% 
   ggplot(aes(x= genero, y = valores, fill = es_lider))+
   geom_col(position = "fill")+
   estilo +
-  scale_fill_manual(values = c("#344D7E", "#75838F")) +
+  scale_fill_manual(values = c("#75838F", "#344D7E")) +
   labs(title = "Proporción de Líderes según género",
        x = "", y = "", fill = "", 
        caption = fuente)

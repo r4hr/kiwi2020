@@ -32,7 +32,7 @@ meta() %>%
       "Desarrollado por el Club de R para RRHH."
     ),
     url = "https://kiwi-parcial.netlify.app/",
-    image = "kiwi-fondo.png",
+    image = "https://github.com/r4hr/kiwi2020/blob/main/kiwi-cover.png?raw=true",
     image_alt = paste(
       "Encuesta KIWI de Sueldos de RRHH de LATAM:", 
       "Respuestas parciales de algunas preguntas de la 1° Encuesta KIWI de Sueldos de RRHH de LATAM", 
@@ -110,7 +110,10 @@ background-color: "#5d6d7e"
 background-color: "#5d6d7e" 
 # ¿Aún no completaste la encuesta?
 
-.pull-left[<img src="https://media.giphy.com/media/kjfHMdG6Y3LP2/giphy.gif" />]
+
+.pull-left[
+<br><br>
+<img src="https://media.giphy.com/media/kjfHMdG6Y3LP2/giphy.gif" />]
 
 .pull-right[
 <br><br><br><br>
@@ -312,7 +315,7 @@ ggplot(div, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=genero)) +
 ```{r genero-tabla, echo=FALSE}
 gt(div %>% select(genero, n, freq)) %>% 
   tab_header(title = "Cantidad de respuestas según género") %>% 
-  tab_source_note(source_note = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam") %>% 
+  tab_source_note(source_note = fuente) %>% 
   fmt_percent(columns = "freq", decimals = 1) %>% 
   cols_label(genero = "Género",
              n = "Cantidad",
@@ -374,15 +377,15 @@ lideres_genero %>%
                names_to = "es_lider", 
                values_to = "valores") %>% 
   mutate(es_lider = factor(es_lider, 
-                           levels = c("porc_lider", "porc_no_lider"), 
-                           labels = c("Líder", "No Líder"))) %>% 
+                           levels = c("porc_no_lider", "porc_lider"), 
+                           labels = c("No Líder", "Líder"))) %>% 
   ggplot(aes(x= genero, y = valores, fill = es_lider))+
   geom_col(position = "fill")+
   estilo +
-  scale_fill_manual(values = c("#344D7E", "#75838F")) +
+  scale_fill_manual(values = c("#75838F", "#344D7E")) +
   labs(title = "Proporción de Líderes según género",
        x = "", y = "", fill = "", 
-       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam")
+       caption = fuente)
 ```
 
 ]
@@ -453,7 +456,7 @@ Agradecemos a [Natsumi Shokida](https://twitter.com/NatsuSh) por permitirnos rep
 # Preguntas Random
 ## "¿Pensás tener hijos?"/"¿Por qué no estás casada?"
 
-Cuando diseñamos esta encuesta, nos pareció una buena idea preguntar sobre cuáles fueron las preguntas más desubicadas o bizarras que realizada en una entrevista laboral. Pero nunca nos imaginamos que íbamos a necesitar filtrar por [**chongo**](https://www.serargentino.com/gente/como-hablamos/que-es-un-chongo).
+Cuando diseñamos esta encuesta, nos pareció una buena idea preguntar sobre cuáles fueron las preguntas más desubicadas o bizarras realizadas en una entrevista laboral. Pero nunca nos imaginamos que íbamos a necesitar filtrar por **chongo** (para saber a qué llamamos *"chongo"* en Argentina [entra en este link](https://www.serargentino.com/gente/como-hablamos/que-es-un-chongo)).
 
 ```{r biz,echo=TRUE}
 preg <- kiwi[,c(2,41)] 
