@@ -368,7 +368,8 @@ lideres_genero <- lideres %>%
   mutate(proporcion = percent(lider/n))
 
 
-# Gráfico
+
+# Gráfico de proporción de liderzgo según género.
 lideres_genero %>% 
   mutate(porc_lider = lider/n, 
          porc_no_lider = 1 - porc_lider) %>% 
@@ -385,6 +386,35 @@ lideres_genero %>%
   labs(title = "Proporción de Líderes según género",
        x = "", y = "", fill = "", 
        caption = fuente)
+
+# Test de hipótesis para validar diferencias de resultados
+# Hay que verificar si la proporción de líderes hombres es mayor que la proporción de líderes mujeres
+
+# Creo un dataframe para analizar proporciones de hombres y de mujeres en puestos de liderazgo y de no-liderazgo
+test_lider <- lideres_genero %>% 
+  mutate(no_lider = n - lider) %>%        # Columna de no líderes
+  select(genero, lider, no_lider) %>%     # selecciono columnas de interés
+  pivot_longer(cols = c(lider, no_lider), # Hago un dataset largo para analizar después
+               names_to = "es_lider", values_to = "conteo")
+
+# Del total de respuestas me interesa sólo ver cuáles son los hombres con puesto de liderazgo
+test_lider$cat <- c(0,0,1,0)
+
+# Extraigo el mu para decidir si la diferencia es significativa y pasarlo a la fórmula del test.
+prop_mujer_lid <- pull(lideres_genero[1,2]/lideres_genero[1,3])
+
+# Realizo el test de hipótesis.
+# H0 = Las proporciones de líderes hombres y mujeres son iguales
+# H1 = La proporción de hombres líderes es mayor que la proporción de mujeres líderes.
+resultados_test <- broom::tidy(t.test(test_lider$cat, mu = prop_mujer_lid, alternative = "greater"))
+
+
+valor_test <- if(resultados_test[1,3] > 0.05) {
+  print("la diferencia es estadísticamente significativa")
+} else {
+  print("la diferencia no es estadísticamente significativa")
+}
+
 
 # Nombres de RRHH --------------------------------------------------------
 

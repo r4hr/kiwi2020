@@ -333,7 +333,7 @@ gt(div %>% select(genero, n, freq)) %>%
 
 .pull-left[
 
-```{r genero-lider, echo=FALSE}
+```{r genero-lider, echo=FALSE, message=FALSE, warning=FALSE, results="hide"}
 lideres <- diversidad %>% 
  select(genero = `Género`,
          puesto = `¿En qué puesto trabajás?`,
@@ -355,6 +355,35 @@ lideres_genero <- lideres %>%
   select(genero, lider, n) %>% 
   mutate(proporcion = percent(lider/n))
 
+# Test de hipótesis para validar diferencias de resultados
+# Hay que verificar si la proporción de líderes hombres es mayor que la proporción de líderes mujeres
+
+# Creo un dataframe para analizar proporciones de hombres y de mujeres en puestos de liderazgo y de no-liderazgo
+test_lider <- lideres_genero %>% 
+  mutate(no_lider = n - lider) %>%        # Columna de no líderes
+  select(genero, lider, no_lider) %>%     # selecciono columnas de interés
+  pivot_longer(cols = c(lider, no_lider), # Hago un dataset largo para analizar después
+               names_to = "es_lider", values_to = "conteo")
+
+# Del total de respuestas me interesa sólo ver cuáles son los hombres con puesto de liderazgo
+test_lider$cat <- c(0,0,1,0)
+
+# Extraigo el mu para decidir si la diferencia es significativa y pasarlo a la fórmula del test.
+prop_mujer_lid <- pull(lideres_genero[1,2]/lideres_genero[1,3])
+
+# Realizo el test de hipótesis.
+# H0 = Las proporciones de líderes hombres y mujeres son iguales
+# H1 = La proporción de hombres líderes es mayor que la proporción de mujeres líderes.
+resultados_test <- broom::tidy(t.test(test_lider$cat, mu = prop_mujer_lid, alternative = "greater"))
+
+
+valor_test <- if(resultados_test[1,3] > 0.05) {
+  print("la diferencia es estadísticamente significativa, y la proporción de hombres en puestos de liderazgo es mayor que el de las mujeres")
+  } else {
+    print("la diferencia no es estadísticamente significativa, y la proporción de hombres no es estadísticamente mayor que el de las mujeres en puestos de liderazgo")
+  }
+
+
 ```
 
 De acuerdo a las respuestas recolectadas **2 de cada 3** participantes son mujeres.
@@ -365,6 +394,7 @@ Del total de **mujeres**, `r lideres_genero[1,3]` respuestas, `r lideres_genero[
 
 Del total de **hombres**, `r lideres_genero[2, 3]` respuestas, `r lideres_genero[2,2]` ocupan un puesto de liderazgo (`r lideres_genero[2, 4]`).
 
+Con un *p-value* igual a `r round(resultados_test[1,3],3)` podemos afirmar que **`r valor_test`**.
 ]
 
 .pull-right[
