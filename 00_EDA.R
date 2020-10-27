@@ -12,7 +12,7 @@ library(gt)
 library(extrafont)
 library(ggthemes)
 library(scales)
-library(ggalt)
+library(ggalt) 
 options(scipen = 999)
 
 loadfonts(quiet = TRUE)
@@ -40,6 +40,9 @@ kiwi <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
 
 glimpse(kiwi)
 
+view(Kiwi)
+
+
 
 
 # Respuestas por países
@@ -51,9 +54,10 @@ paises <- kiwi %>%
   filter(Cuenta > 4) %>% 
   arrange(-Cuenta)
 
+
 gt(paises) %>% 
-  tab_header(title = "Cantidad de respuestas por país",
-             subtitle = "Países con más de 5 respuestas") 
+  tab_header(title = "Cantidad de respuestas por País",
+             subtitle = "Países con más de 5 respuestas") #agregue esto
 
 # Respuestas por provincia (Sólo para Argentina)
 provincias <- kiwi %>% 
@@ -88,10 +92,14 @@ liderazgo <- liderazgo %>%
          cuenta = 1) %>% 
   filter(pais == "Argentina")
 
+view(liderazgo)
+
+
 liderazgo %>% group_by(puesto, genero) %>% 
   summarise(sueldo_prom = mean(sueldo), 
             cuenta = sum(cuenta)) %>% 
   print(n = nrow(.))
+
 
 liderazgo %>% 
   group_by(puesto, genero) %>% 
@@ -551,7 +559,7 @@ brecha <- liderazgo %>%
   group_by(genero, puesto) %>% 
   summarise(media_salarial = mean(sueldo))
 
-
+brecha
 
 brecha_graf <- brecha %>% 
   pivot_wider(., names_from = genero, values_from = media_salarial) %>% 
@@ -579,4 +587,144 @@ ggplot(brecha_graf,
   theme_minimal()+
   theme(plot.background = element_rect(fill = "#fbfcfc"),
         text = element_text(family = "Roboto"))
+
+
+## Salarios 
+
+#¿Cómo es un salario típico en cada región?
+#Esto, a nivel comparativo, a grosso modo y sin contemplar otras variables.
+#1- Segun Pais: (No se la conversion)
+
+#2- En Argentina, por zona
+
+#ver como usar el left_join()para regiones
+
+#3-Edad Vs Salarios
+
+Edad <- kiwi %>%
+    select("Tipo de contratación","Trabajo",Género, Edad,`¿En qué puesto trabajás?`, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
+
+names(Edad) <- c("Jornada","Trabajo","genero","edad","puesto","sueldo")
+
+head(Edad)
+
+Edad <- Edad %>% 
+  filter(!is.na(puesto)) %>%
+  filter(edad>18) %>% 
+  filter(Jornada=="Full time") %>% 
+  filter(Trabajo=="Relación de Dependencia")%>% 
+  mutate(sueldo = as.numeric(unlist(sueldo)),
+         cuenta = 1) 
+
+head(Edad)
+
+Edad %>% group_by(edad, genero) %>% 
+  summarise(sueldo_prom = mean(sueldo), 
+            cuenta = sum(cuenta)) %>% 
+  print(n = nrow(.))
+
+
+Edad2 <- Edad %>%
+  mutate(sueldo = as.numeric(unlist(sueldo))) %>% 
+    mutate(Rangos_Edad = case_when(
+    edad %in% 18:30 ~ "Hasta 30",
+    edad %in% 31:40 ~ "Entre 31 y 40",
+    edad %in% 41:50 ~ "Entre 41 y 50",
+    edad %in% 51:70 ~ "Más de 50"),
+    Rangos_Edad = factor(Rangos_Edad, 
+                         levels = c("Hasta 30", "Entre 31 y 40","Entre 41 y 50", "Más de 50"))) 
+  
+
+Edad3<- Edad2 %>%
+  select(Rangos_Edad, sueldo) %>%
+  filter(sueldo>1) %>% 
+  group_by(Rangos_Edad) %>% 
+  summarise(Sueldo_Promedio = mean(sueldo)) # ver si estan bien los promedios
+
+#tabla
+
+gt(Edad3) %>% 
+  tab_header(title = "Sueldos por Rango de Edad")
+
+#Grafico 
+
+Edad3 %>% 
+  ggplot(aes(x = reorder(Rangos_Edad, Sueldo_Promedio), y = Sueldo_Promedio)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Sueldo promedio por área",
+       subtitle = "En pesos argentinos",
+       x= "", y = "", fill = "Género",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")+
+  theme_minimal() +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
+
+#Salarios segun puestos 
+
+puestos<-kiwi %>% 
+  select("Tipo de contratación","Trabajo","País en el que trabajas",Género, Edad,`¿En qué puesto trabajás?`, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
+
+names(puestos) <- c("Jornada","Trabajo","pais","genero","edad","puesto","sueldo")
+
+puestos
+
+#rta por puesto 
+
+puestos1 <- puestos %>% 
+  filter(pais=="Argentina") %>% 
+  filter(!is.na(puesto)) %>% 
+  mutate(cuenta = 1) %>% 
+  group_by(`puesto`) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta) %>% 
+  print(n = nrow(.))
+
+puestos1
+
+#tabla por puestos
+
+gt(puestos1) %>% 
+  tab_header(title = "Cantidad por puestos",
+             subtitle ="En Argentina")
+
+#Promedio por puestos 
+
+
+puestos2<- puestos %>%
+  select(puesto,pais,sueldo) %>%
+  filter(pais=="Argentina") %>% 
+  filter(!is.na(puesto)) %>%
+  filter(sueldo>1000) %>% 
+  group_by(puesto) %>%
+  mutate(sueldo = as.numeric(unlist(sueldo)),
+         cuenta = 1) %>% 
+  summarise(Sueldo_Promedio = mean(sueldo)) %>% 
+  print(n = nrow(.))
+
+#tabla
+
+gt(puestos2) %>% 
+  tab_header(title = "Sueldos Promedio por puestos",
+             subtitle ="En Argentina")
+
+#filtramos mas los puestos:
+
+puestos 
+
+puestos3<- puestos %>%
+  select(puesto,pais,sueldo) %>%
+  filter(`pais`=="Argentina") %>% 
+  filter(!is.na(puesto)) %>%
+  filter(sueldo>1000) %>% 
+  mutate(cuenta = 1) %>%
+  group_by(puesto) %>%
+  mutate(sueldo = as.numeric(unlist(sueldo)),
+         cuenta = 1) %>% 
+  summarise(Sueldo_Promedio = mean(sueldo)) %>% 
+  print(n = nrow(.))
+
+view(puest)
+
+
+puestos3
 
