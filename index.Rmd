@@ -216,13 +216,16 @@ sueldos_dolar <- sueldos_dolar %>%
          sueldo_dolar = sueldo_ft/tipo_cambio,
          cuenta = 1)
 
-
-# Dado que los percentiles 5 y 95 están en U$412 y 2795 respectivamente, 
+# Estimamos percentiles 5 y 95 para usar valores más centrales
 # podamos todo lo que esté fuera de ese rango
+
+numericos <- funModeling::profiling_num(sueldos_dolar)
+poda_p05 <- numericos[5,6]
+poda_p95 <- numericos[5,10]
 
 mediana_pais <- sueldos_dolar %>% 
   filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"),
-         between(sueldo_dolar,400,3000)) %>% 
+         between(sueldo_dolar, poda_p05, poda_p95)) %>% 
   group_by(pais) %>% 
   summarise(sueldop = list(mean_se(sueldo_dolar)),
             cant = sum(cuenta)) %>% 
@@ -243,7 +246,7 @@ ggplot(mediana_pais, aes(reorder(pais, -y), y =  y))+
              alpha = 0.3, size = 2, color = "#75838F")+
   geom_text(aes(label = round(x=y, 0), vjust = 1.5, fontface = "bold"), size = 5, color = "white")+
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
-  labs(title = "Mediana salarial por país",
+  labs(title = "Salario promedio por país",
        subtitle = "Sueldos de RRHH en U$S",
        caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con más de 5 respuestas",
        x = "", y = "") + 
