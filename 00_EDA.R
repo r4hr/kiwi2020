@@ -237,14 +237,16 @@ sueldos_dolar <- sueldos_dolar %>%
 
 summary(sueldos_dolar)
 
-funModeling::profiling_num(sueldos_dolar)
+numericos <- funModeling::profiling_num(sueldos_dolar)
+poda_p05 <- numericos[5,6]
+poda_p95 <- numericos[5,10]
 
 # Dado que los percentiles 5 y 95 están en U$412 y 2795 respectivamente, 
 # podamos todo lo que esté fuera de ese rango
 
 mediana_pais <- sueldos_dolar %>% 
   filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay", "Perú"),
-         between(sueldo_dolar,400,3000)) %>% 
+         between(sueldo_dolar,poda_p05,poda_p95)) %>% 
   group_by(pais) %>% 
   summarise(sueldop = list(mean_se(sueldo_dolar)),
             cant = sum(cuenta)) %>% 
