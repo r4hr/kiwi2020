@@ -224,7 +224,7 @@ poda_p05 <- numericos[5,6]
 poda_p95 <- numericos[5,10]
 
 mediana_pais <- sueldos_dolar %>% 
-  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"),
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Perú", "Uruguay"),
          between(sueldo_dolar, poda_p05, poda_p95)) %>% 
   group_by(pais) %>% 
   summarise(sueldop = list(mean_se(sueldo_dolar)),
@@ -233,7 +233,7 @@ mediana_pais <- sueldos_dolar %>%
   filter(cant>4)
 
 sueldo_dolar_pais <- sueldos_dolar %>% 
-  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"), 
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Perú", "Uruguay"), 
          between(sueldo_dolar, 400,3000))
   
 
