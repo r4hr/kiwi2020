@@ -442,9 +442,10 @@ liderazgo <- liderazgo %>%
 
 brecha <- liderazgo %>% 
   filter(genero %in% c("Femenino", "Masculino"), 
-         puesto %in% c("Director", "Gerente", "HRBP","Responsable", "Analista", "Administrativo")) %>% 
+         puesto %in% c("Director", "Gerente","Jefe", "HRBP","Responsable", "Analista", "Administrativo")) %>% 
   mutate(puesto = factor(puesto, levels = c("Administrativo","Analista", 
-                                            "HRBP", "Responsable","Gerente","Director" ))) %>% 
+                                            "HRBP", "Responsable", "Jefe",
+                                            "Gerente","Director" ))) %>% 
   select(-pais) %>% 
   group_by(genero, puesto) %>% 
   summarise(media_salarial = mean(sueldo))
