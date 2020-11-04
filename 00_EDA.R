@@ -5,17 +5,19 @@
 
 # Paquetes y opciones -------------------------------------
 
-library(tidyverse)
-library(googlesheets4)
-library(gargle)
-library(gt)
-library(extrafont)
-library(ggthemes)
-library(scales)
-library(ggalt)
-options(scipen = 999)
+library(tidyverse)      # Transformar y limpiar datos
+library(googlesheets4)  # Leer datos desde Google Sheets
+library(gargle)         # Corregir lectura de símbolos especiales desde Google Sheets
+library(gt)             # Dar formato a las tablas
+library(extrafont)      # Permite utilizar otras fuentes en los gráficos y salidas
+library(ggthemes)       # Amplía las posibilidades estéticas de ggplot2
+library(scales)         # Permite cambiar los formatos de decimales, de porcentajes, etc.
+library(ggalt)          # Nuevos tipos de geom para ggplot2. Para realizar el gráfico de gap salarial
+library(funModeling)    # Para explorar datos y modelos
 
-loadfonts(quiet = TRUE)
+options(scipen = 999)   # Modifica la visualización de los ejes numérico a valores nominales
+
+loadfonts(quiet = TRUE) # Permite cargar en R otros tipos de fuentes.
 
 # Estilo de los gráficos
 estilo <- theme(panel.grid = element_blank(),
@@ -23,30 +25,142 @@ estilo <- theme(panel.grid = element_blank(),
                 panel.background = element_blank(),
                 text = element_text(family = "Roboto"))
 
+# Estilo limpio con líneas de referencia verticales en gris claro
+estilov <- theme(panel.grid = element_blank(),
+                 plot.background = element_rect(fill = "#FBFCFC"),
+                 panel.background = element_blank(),
+                 axis.line.x = element_line(color = "DAD6D8"),
+                 text = element_text(family = "Roboto"))
+
+# Estilo limpio con líneas de referencia horizontales en gris claro
+estiloh <- theme(panel.grid = element_blank(),
+                 plot.background = element_rect(fill = "#FBFCFC"),
+                 panel.background = element_blank(),
+                 axis.line.y = element_line(color = "DAD6D8"),
+                 text = element_text(family = "Roboto"))
+
 genero <- c("#8624F5", "#1FC3AA", "#FFD129", "#75838F") #Violeta - Verde - Amarillo - Gris
 
 colores <-  c("#8624F5", "#1FC3AA")
 
+# Creo un objeto con un texto que se va a repetir mucho a lo largo del análisis
 fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
 
 
 # Carga de datos ------------------------------------------
 
 
-kiwi <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
+original <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
 
+
+
+# Preprocesamiento ---------------------------------------
+kiwi <- original
+
+limpios <- make.names(colnames(kiwi))
+colnames(kiwi) <- limpios
+
+names(kiwi)
+rm(limpios)
+
+kiwi <- kiwi %>% 
+  select(-X.Querés.contestar.más.preguntas....31, 
+         -X.Querés.contestar.más.preguntas....42) %>% 
+  rename(genero = Género,
+         genero_diverso = X.Te.identificás.como.LGBT...lesbiana..gay..bisexual..transexual..otra.minoría.sexual..,
+         edad = Edad,
+         discapacidad = X.Tenés.alguna.discapacidad.,
+         nivel_formacion = `Máximo.nivel.de.formación`,
+         carrera_grado = X.Qué.carrera.de.grado.estudiaste.,
+         tipo_universidad = X.En.qué.tipo.de.universidad.estudiaste.tu.carrera.de.grado.,
+         pais = País.en.el.que.trabajas,
+         provincia = Provincia.donde.trabajas,
+         trabajo = Trabajo,
+         rubro = Rubro.de.la.empresa,
+         dotacion = X.Cuántos.empleados.tiene.la.empresa.,
+         origen_capital = Origen.del.capital,
+         dotacion_rh = X.Cuántas.personas.integran.el.área.de.RRHH.,
+         puesto = X.En.qué.puesto.trabajás.,
+         tipo_contratacion = Tipo.de.contratación,
+         funcion_rh = X.Cuál.es.tu.función.principal.en.RRHH.,
+         personas_a_cargo = "X.Cuántas.personas.tenés.a.cargo...poné.0.si.no.tenés.gente.a.cargo.",
+         anios_en_empresa = "X.Hace.cuántos.años.trabajas.en.la.empresa.donde.estás...0.para.menos.de.un.año.",
+         anios_en_puesto = "X.Hace.cuántos.años.estás.en.tu.puesto.actual...0.para.menos.de.un.año.",
+         anios_experiencia = X.Cuántos.años.de.experiencia.tenés.en.RRHH.,
+         sueldo_bruto = X.Cuál.es.tu.remuneración.BRUTA.MENSUAL.en.tu.moneda.local...antes.de.impuestos.y.deducciones.,
+         beneficios = X.Qué.beneficios.tenés.,
+         bono = X.Recibís.bonos.,
+         ajuste = X.Tuviste.ajustes.por.inflación.en.2020.,
+         ajuste_porcentaje = X.Cuál.fue.el.porcentaje.de.aumento.acumulado.que.tuviste.en.2020.,
+         ajuste_mes = Mes.del.último.ajuste,
+         otros_proyectos = X.Trabajás.en.proyectos.independientes.además.de.tu.empleo.,
+         erp = X.Qué.sistema.de.gestión.de.RRHH.usan.en.tu.empresa.,
+         nombre_area = X.Cómo.se.llama.el.área.en.tu.empresa.,
+         mate = X.Se.podía.tomar.mate.en.las.oficinas.de.tu.empresa...antes.del.COVID.19.,
+         idioma_exigencia = X.Te.exigieron.saber.un.idioma.extranjero..inglés..portugués..etc...para.entrar.a.trabajar.en.tu.empresa.,
+         idioma_porcentaje = X.Qué.porcentaje.del.tiempo.usas.el.idioma.extranjero.en.tu.puesto.actual.,
+         contactos_linkedin = "X.Cuántos.contactos.tenés.en.LinkedIn...poné.0.si.no.tenés.cuenta.de.LinkedIn.",
+         satisfaccion = X.Qué.tan.satisfecho.estás.con.tu.empresa.,
+         busqueda = X.Estás.buscando.trabajo.,
+         beneficios_expectativa = X.Qué.beneficios.te.gustaría.tener.,
+         rh_una_palabra = Definí.a.RRHH.con.una.sola.palabra,
+         pregunta_bizarra = X.Cuál.es.la.pregunta.más.bizarra.que.te.han.hecho.has.hecho.en.una.entrevista.,
+         teletrabajo = X.Estás.trabajando.desde.tu.casa.,
+         elementos = X.Qué.elementos.te.proveyó.la.empresa.para.que.puedas.trabajar.desde.tu.casa.,
+         valoracion_gestion_empresa = X.Cómo.valorarías.la.gestión.de.tu.empresa.en.este.nuevo.contexto.,
+         registro_fiscal = X.Cómo.estás.registrado.a.fiscalmente.,
+         anios_freelance = X.Hace.cuántos.años.trabajás.como.freelance.,
+         lugar_trabajo = X.Dónde.trabajás.habitualmente...sin.considerar.la.coyuntura.por.COVID.19.,
+         exporta = X.Exportás.tus.servicios.,
+         medio_pago_exterior = Si.exportás.servicios...a.través.de.qué.medios.de.pago.recibís.los.pagos.del.exterior.,
+         cuotas = X.Aceptás.pagos.en.cuotas.,
+         colaboracion_freelance = X.Trabajás.con.otros.freelancers.de.tu.mismo.rubro.,
+         servicio_busqueda = X.Tu.servicio.principal.está.relacionado.con.búsqueda.y.selección.,
+         busqueda_it = X.Te.dedicás.principalmente.a.realizar.búsquedas.de.IT.Tecnología.,
+         trabajo_a_riesgo =X.Trabajás.a.riesgo.,
+         coeficiente = X.Cuál.es.el.coeficiente.que.cobrás.por.tus.servicios.,
+         base_coeficiente = El.coeficiente.lo.calculás.sobre.,
+         garantia = X.Ofrecés.garantía.,
+         servicio_principal = X.Cuál.es.el.servicio.principal.que.brindas...si.brindás.más.de.un.servicio..elegí.el.que.más.ingresos.genere.,
+         valor_hora = X.Cuál.es.el.valor.hora.promedio.que.ofrecés...moneda.local.)
+
+# Base de freelancers
+freelo <- kiwi %>% 
+  filter(trabajo == "Freelance")
+
+# Base de empleados en relación de dependencia
+rh <- kiwi %>% 
+  filter(trabajo == "Relación de Dependencia") %>% 
+  mutate(sueldo_bruto = as.numeric(unlist(sueldo_bruto)),
+         puesto = factor(puesto))
+  
+# Unificación de puestos
+rh <- rh %>% 
+  filter(puesto != "Juzgado Civil y Comercial",
+         puesto != "Programador",
+         puesto != "Cuidado") %>% 
+  mutate(puesto = str_trim(puesto, side = "both"),
+         puesto = fct_recode(puesto, "Asistente" = "Aux",
+                             "Asistente" = "Asistente RRHH",
+                             "Gerente" = "Superintendente"),
+         puesto = fct_collapse(puesto, "HRBP" = c("Asesor", "Asesoramiento", 
+                                                  "Senior Consultoría", "specialist"))) 
 
 # Análisis exploratorio ----------------------------------
 
-glimpse(kiwi)
+glimpse(rh)
 
-
+rh %>% 
+  group_by(puesto) %>% 
+  summarise(sueldo_mediana = median(sueldo_bruto),
+            total = n()) %>% 
+  print(n = nrow(.))
 
 # Respuestas por países
-paises <- kiwi %>% 
-  select(`País en el que trabajas`) %>% 
+paises <- rh %>% 
+  select(pais) %>% 
   mutate(cuenta = 1) %>% 
-  group_by(`País en el que trabajas`) %>% 
+  group_by(pais) %>% 
   summarise(Cuenta = sum(cuenta)) %>% 
   filter(Cuenta > 4) %>% 
   arrange(-Cuenta)
@@ -57,9 +171,9 @@ gt(paises) %>%
 
 # Respuestas por provincia (Sólo para Argentina)
 provincias <- kiwi %>% 
-  filter(`País en el que trabajas` == "Argentina") %>% 
+  filter(pais == "Argentina") %>% 
   mutate(cuenta = 1) %>% 
-  group_by(`Provincia donde trabajas`) %>% 
+  group_by(provincia) %>% 
   summarise(Cuenta = sum(cuenta)) %>% 
   arrange(-Cuenta)
 
@@ -68,23 +182,19 @@ gt(provincias)
 
 
 liderazgo <- kiwi %>% 
-  select(Género, `¿En qué puesto trabajás?`,`País en el que trabajas` ,`¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
+  select(genero, puesto,pais ,sueldo_bruto)
 
-names(liderazgo) <- c("genero", "puesto","pais", "sueldo")
-
-
-head(liderazgo)
 
 kiwi %>% 
-  select(`Rubro de la empresa`) %>% 
-  group_by(`Rubro de la empresa`) %>% 
+  select(rubro) %>% 
+  group_by(rubro) %>% 
   count(sort = TRUE) %>% 
-  print(n = nrow(.))
+  print(n = nrow(.)) # Imprime en consola todos los resultados
 
 # Exploración para Argentina
 liderazgo <- liderazgo %>% 
   filter(!is.na(puesto)) %>% 
-  mutate(sueldo = as.numeric(unlist(sueldo)),
+  mutate(sueldo = as.numeric(unlist(sueldo_bruto)),
          cuenta = 1) %>% 
   filter(pais == "Argentina")
 
@@ -103,7 +213,6 @@ liderazgo %>%
   coord_flip()+
   theme_minimal()+
   theme(legend.position = "bottom")
-
 
 
 liderazgo %>% 
@@ -544,9 +653,9 @@ liderazgo %>%
 
 brecha <- liderazgo %>% 
   filter(genero %in% c("Femenino", "Masculino"), 
-         puesto %in% c("Director", "Gerente", "HRBP","Responsable", "Analista", "Administrativo")) %>% 
+         puesto %in% c("Director", "Gerente", "Jefe", "HRBP","Responsable", "Analista", "Administrativo")) %>% 
   mutate(puesto = factor(puesto, levels = c("Administrativo","Analista", 
-                                            "HRBP", "Responsable","Gerente","Director" ))) %>% 
+                                            "HRBP", "Jefe", "Responsable","Gerente","Director" ))) %>% 
   select(-pais) %>% 
   group_by(genero, puesto) %>% 
   summarise(media_salarial = mean(sueldo))
@@ -580,3 +689,72 @@ ggplot(brecha_graf,
   theme(plot.background = element_rect(fill = "#fbfcfc"),
         text = element_text(family = "Roboto"))
 
+
+# Satisfacción -------------------------
+
+satisf <- kiwi %>% 
+  filter(!is.na(`¿Qué tan satisfecho estás con tu empresa?`),
+         `País en el que trabajas` == "Argentina") %>% 
+  select(Género, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`, `¿Qué tan satisfecho estás con tu empresa?`)
+
+names(satisf) <- c("genero", "sueldo", "satisfaccion")
+
+satisf <- satisf %>% 
+  mutate(sueldo = as.numeric(unlist(sueldo))) %>% 
+  filter(sueldo > 30000)
+
+profiling_num(satisf)
+
+p25 <- profiling_num(satisf)[1,7]
+p50 <- profiling_num(satisf)[1,8]
+p75 <- profiling_num(satisf)[1,9]
+
+satisf <- satisf %>% 
+  mutate(cuartil = case_when(
+    sueldo  <   p25  ~ "1Q",
+    sueldo %in% p25:p50 ~ "2Q",
+    sueldo %in% p50:p75 ~ "3Q",
+    TRUE ~ "4Q"),
+    satisfaccion = factor(satisfaccion, 
+                          levels = c(1,2,3,4,5)), 
+    cuenta = 1)
+
+library(networkD3)
+
+
+satisf <- satisf %>% 
+  group_by(satisfaccion, cuartil) %>% 
+  summarise(value = sum(cuenta))
+
+nodes <- data.frame(name=c(as.character(satisf$satisfaccion),
+                           as.character(satisf$cuartil)) %>% 
+                      unique())
+
+satisf$IDsource <- match(satisf$satisfaccion, nodes$name) - 1
+satisf$IDtarget <-match(satisf$cuartil, nodes$name) - 1
+
+
+sankeyNetwork(Links = satisf,
+              Nodes = nodes,
+              Value = "value",
+              NodeID = "name",
+              sinksRight=TRUE, nodeWidth=40, fontSize=13, nodePadding=20)
+
+
+puestos <- kiwi %>%
+  filter(!is.na(`¿En qué puesto trabajás?`)) %>% 
+  select(pais = `País en el que trabajas`, 
+         rol = `¿Cuál es tu función principal en RRHH?`,
+         puesto = `¿En qué puesto trabajás?`,
+         sueldo =`¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`) %>% 
+  mutate(sueldo = as.numeric(unlist(sueldo)),
+         cuenta = 1)
+
+
+
+puestos %>% 
+  filter(pais == "Argentina") %>% 
+  group_by(rol, puesto) %>% 
+  summarise(promedio = mean(sueldo),
+            cant = sum(cuenta)) %>% 
+  print(n = nrow(.))
