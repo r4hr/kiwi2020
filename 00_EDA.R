@@ -86,6 +86,8 @@ kiwi %>%
   print(n = nrow(.))
 
 # Exploración para Argentina
+
+
 liderazgo <- liderazgo %>% 
   filter(!is.na(puesto)) %>% 
   mutate(sueldo = as.numeric(unlist(sueldo)),
@@ -187,7 +189,6 @@ coment <- coment %>%
   filter(!is.na(Comentarios)) %>% 
   mutate(Comentarios = as.character(Comentarios)) %>% 
   unnest_tokens(palabra, Comentarios)
-
 
 coment_bi <- coment %>% 
   anti_join(vacias) %>% 
@@ -314,7 +315,7 @@ div$ymin <- c(0, head(div$ymax, n=-1))
 
 # Compute label position
 div$labelPosition <- (div$ymax + div$ymin) / 2
-
+labelPositio
 # Compute a good label
 div$label <- paste0(div$genero, "\n Cant: ", div$n)
 
@@ -559,8 +560,6 @@ brecha <- liderazgo %>%
   group_by(genero, puesto) %>% 
   summarise(media_salarial = mean(sueldo))
 
-brecha
-
 brecha_graf <- brecha %>% 
   pivot_wider(., names_from = genero, values_from = media_salarial) %>% 
   mutate(brecha = percent((Masculino-Femenino)/Masculino, 1),
@@ -592,14 +591,44 @@ ggplot(brecha_graf,
 ## Salarios 
 
 #¿Cómo es un salario típico en cada región?
-#Esto, a nivel comparativo, a grosso modo y sin contemplar otras variables.
-#1- Segun Pais: (No se la conversion)
+#Esto, a nivel comparativo, a groso modo y sin contemplar otras variables.
+#1- Segun Pais: (No se como hacer la conversion)
 
-#2- En Argentina, por zona
+#aca usar sueldos en dolares
 
-#ver como usar el left_join()para regiones
+#2- En Argentina, por región
 
-#3-Edad Vs Salarios
+#cree una tabla con las provincias por region (verificar geografia)
+
+region_Arg <- sheets_read("1DBw_nAkIggFvuce-_S20BuNW8ir3Wv1i3hdF44fPWrU")
+
+region_Arg
+
+region_Arg <- region_Arg %>% 
+  rename(provincias = `nombre`) %>% 
+  filter(!is.na(provincias))
+
+regiones_arg2 <- kiwi %>% 
+  filter(`País en el que trabajas` == "Argentina") %>% 
+  mutate(cuenta = 1) %>% 
+  group_by(`Provincia donde trabajas`) %>% 
+  rename(provincias = `Provincia donde trabajas`) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+regiones_arg3 <-regiones_arg2 %>% 
+  left_join(regiones_arg2, by="provincias") %>% 
+
+
+#ver como usar el left_join()para regiones, porque me trabe
+#de  aca: una vez filtrado por region, sacar la mediana por provincia y hacer 
+  #un grafico de barras horizontal
+  
+#3 Ajustes:
+
+#Una vez filtrado por region, sacar los ajustes anuales,  y hacer un grafico de barras horizontal
+
+#4-Edad Vs Salarios
 
 Edad <- kiwi %>%
     select("Tipo de contratación","Trabajo",Género, Edad,`¿En qué puesto trabajás?`, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
@@ -644,7 +673,7 @@ Edad3<- Edad2 %>%
 #tabla
 
 gt(Edad3) %>% 
-  tab_header(title = "Sueldos por Rango de Edad")
+  tab_header(title = "Sueldos Promedio por Rango de Edad")
 
 #Grafico 
 
@@ -659,7 +688,7 @@ Edad3 %>%
   theme_minimal() +
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
 
-#Salarios segun puestos 
+#4- Salarios segun puestos 
 
 puestos<-kiwi %>% 
   select("Tipo de contratación","Trabajo","País en el que trabajas",Género, Edad,`¿En qué puesto trabajás?`, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
@@ -721,6 +750,7 @@ puestos3<- puestos %>%
   mutate(sueldo = as.numeric(unlist(sueldo)),
          cuenta = 1) %>% 
   summarise(Sueldo_Promedio = mean(sueldo)) %>% 
+  arrange(-Sueldo_Promedio) %>% 
   print(n = nrow(.))
 
 view(puest)
@@ -728,3 +758,14 @@ view(puest)
 
 puestos3
 
+gt(puestos3) %>% 
+  tab_header(title = "Sueldos Promedio por puestos",
+             subtitle ="En Argentina")
+
+#agrupar los casos unicos en una categoria, que sea otros. 
+
+#5- salarios segun puesto/ experiencia
+#Sacar el promedio y la mediana
+
+#6- salarios segun puesto/rubro
+#Tomar, solo los rubros mayores, y el resto en otros. 
