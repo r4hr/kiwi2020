@@ -40,7 +40,7 @@ kiwi <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
 
 glimpse(kiwi)
 
-view(Kiwi)
+view(kiwi)
 
 
 
