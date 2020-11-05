@@ -30,7 +30,8 @@ estilov <- theme(panel.grid = element_blank(),
                  plot.background = element_rect(fill = "#FBFCFC"),
                  panel.background = element_blank(),
                  axis.line.x = element_line(color = "#AEB6BF"),
-                 text = element_text(family = "Roboto"))
+                 text = element_text(family = "Roboto")) 
+  
 
 # Estilo limpio con líneas de referencia horizontales en gris claro
 estiloh <- theme(panel.grid = element_blank(),

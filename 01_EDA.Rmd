@@ -13,7 +13,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, dpi = 300)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, dpi = 200)
 ```
 
 # Intro
@@ -404,6 +404,17 @@ Dada la baja cantidad de respuestas de otros países, sólo podemos hacer análi
 rh_ar <- rh %>% 
   filter(pais == "Argentina")
 
+# Poda de sueldos entre percentiles 5 y 95
+numericos2 <- rh_ar %>% 
+  select_if(is.numeric) %>% 
+  profiling_num()
+
+p_05 <- numericos2[5,6]
+p_95 <-numericos2[5,10]
+
+rh_ar <- rh_ar %>% 
+  filter(between(sueldo_bruto, p_05, p_95))
+
 ```
 
 ## Análisis por rubros
@@ -421,19 +432,3 @@ rubro <- rh_ar %>%
 datatable(rubro)
 ```
 
-```{r rubro-plot}
-rubro %>% 
-  filter(respuestas > 12) %>% 
-  ggplot(aes(x = mediana_sueldo, y = reorder(rubro, mediana_sueldo))) +
-  geom_col(fill = azul) +
-  geom_text(aes(label = round(x=mediana_sueldo, 0), hjust = 1.5),size = 3, color = "white")+
-  labs(title = "Mediana salarial por rubro",
-       subtitle = "Datos de Argentina - en AR$",
-       x = "", y = "",
-       caption = fuente) +
-  scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
-  estilov +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
-
-```
