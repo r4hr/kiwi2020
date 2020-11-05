@@ -1,0 +1,439 @@
+---
+title: "EDA Análisis KIWI"
+author: "Sergio"
+date: "4/11/2020"
+output: 
+  html_document:
+    theme: spacelab
+    highlight: pygments
+    toc: true
+    toc_float: true
+    code_download: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, dpi = 300)
+```
+
+# Intro
+
+Acá voy poniendo los análisis que vayamos haciendo, así todos pueden anotar lo que necesiten y usar los bloques de código para analizar datos.
+
+Usen comentarios en los códigos para contar lo que hicieron así les sirve a los demás.
+
+Pongamos [en este documento](https://docs.google.com/document/d/1JwtTkmq9xqm8P-toojxQdJ6Sb-ckf2wIvphfjvpmeJo/edit?usp=sharing) los criterios que adoptamos así hacemos las cosas parejas.
+
+## Librerías
+
+```{r}
+
+library(tidyverse)      # Transformar y limpiar datos
+library(googlesheets4)  # Leer datos desde Google Sheets
+library(gargle)         # Corregir lectura de símbolos especiales desde Google Sheets
+library(gt)             # Dar formato a las tablas
+library(extrafont)      # Permite utilizar otras fuentes en los gráficos y salidas
+library(ggthemes)       # Amplía las posibilidades estéticas de ggplot2
+library(scales)         # Permite cambiar los formatos de decimales, de porcentajes, etc.
+library(ggalt)          # Nuevos tipos de geom para ggplot2. Para realizar el gráfico de gap salarial
+library(funModeling)    # Para explorar datos y modelos
+library(DT)             # Dar formato tablas largas
+
+options(scipen = 999)   # Modifica la visualización de los ejes numérico a valores nominales
+
+loadfonts(quiet = TRUE) # Permite cargar en R otros tipos de fuentes.
+
+# Estilo de los gráficos
+
+# Estilo limpio sin líneas de fondo
+estilo <- theme(panel.grid = element_blank(),
+                plot.background = element_rect(fill = "#FBFCFC"),
+                panel.background = element_blank(),
+                text = element_text(family = "Roboto"))
+
+# Estilo limpio con líneas de referencia verticales en gris claro
+estilov <- theme(panel.grid = element_blank(),
+                plot.background = element_rect(fill = "#FBFCFC"),
+                panel.background = element_blank(),
+                axis.line.x = element_line(color = "#AEB6BF"),
+                text = element_text(family = "Roboto"))
+
+# Estilo limpio con líneas de referencia horizontales en gris claro
+estiloh <- theme(panel.grid = element_blank(),
+                plot.background = element_rect(fill = "#FBFCFC"),
+                panel.background = element_blank(),
+                axis.line.y = element_line(color = "#AEB6BF"),
+                text = element_text(family = "Roboto"))
+
+genero <- c("#8624F5", "#1FC3AA", "#FFD129", "#75838F") #Violeta - Verde - Amarillo - Gris
+
+colores <-  c("#8624F5", "#1FC3AA")
+
+azul <- "#344D7E"
+
+# Creo un objeto con un texto que se va a repetir mucho a lo largo del análisis
+fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
+
+```
+
+## Carga de datos
+
+```{r cache=TRUE}
+
+original <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
+
+```
+
+# Preprocesamiento
+
+## Cambiar nombres de las variables
+
+Vamos a usar uno de los trucos de la sesión de Pablo Casas (junio) para limpiar los espacios y eliminar los signos de puntuación para hacer más simple el trabajo después.
+
+```{r}
+
+kiwi <- original
+
+limpios <- make.names(colnames(kiwi))
+colnames(kiwi) <- limpios
+
+# Elimino este objeto que no voy a volver a usar
+rm(limpios)
+
+# Elimino columnas innecesarias y cambio nombres de variables
+kiwi <- kiwi %>% 
+  select(-X.Querés.contestar.más.preguntas....31, 
+         -X.Querés.contestar.más.preguntas....42) %>%
+  rename(genero = Género,
+         genero_diverso = X.Te.identificás.como.LGBT...lesbiana..gay..bisexual..transexual..otra.minoría.sexual..,
+         edad = Edad,
+         discapacidad = X.Tenés.alguna.discapacidad.,
+         nivel_formacion = `Máximo.nivel.de.formación`,
+         carrera_grado = X.Qué.carrera.de.grado.estudiaste.,
+         tipo_universidad = X.En.qué.tipo.de.universidad.estudiaste.tu.carrera.de.grado.,
+         pais = País.en.el.que.trabajas,
+         provincia = Provincia.donde.trabajas,
+         trabajo = Trabajo,
+         rubro = Rubro.de.la.empresa,
+         dotacion = X.Cuántos.empleados.tiene.la.empresa.,
+         origen_capital = Origen.del.capital,
+         dotacion_rh = X.Cuántas.personas.integran.el.área.de.RRHH.,
+         puesto = X.En.qué.puesto.trabajás.,
+         tipo_contratacion = Tipo.de.contratación,
+         funcion_rh = X.Cuál.es.tu.función.principal.en.RRHH.,
+         personas_a_cargo = "X.Cuántas.personas.tenés.a.cargo...poné.0.si.no.tenés.gente.a.cargo.",
+         anios_en_empresa = "X.Hace.cuántos.años.trabajas.en.la.empresa.donde.estás...0.para.menos.de.un.año.",
+         anios_en_puesto = "X.Hace.cuántos.años.estás.en.tu.puesto.actual...0.para.menos.de.un.año.",
+         anios_experiencia = X.Cuántos.años.de.experiencia.tenés.en.RRHH.,
+         sueldo_bruto = X.Cuál.es.tu.remuneración.BRUTA.MENSUAL.en.tu.moneda.local...antes.de.impuestos.y.deducciones.,
+         beneficios = X.Qué.beneficios.tenés.,
+         bono = X.Recibís.bonos.,
+         ajuste = X.Tuviste.ajustes.por.inflación.en.2020.,
+         ajuste_porcentaje = X.Cuál.fue.el.porcentaje.de.aumento.acumulado.que.tuviste.en.2020.,
+         ajuste_mes = Mes.del.último.ajuste,
+         otros_proyectos = X.Trabajás.en.proyectos.independientes.además.de.tu.empleo.,
+         erp = X.Qué.sistema.de.gestión.de.RRHH.usan.en.tu.empresa.,
+         nombre_area = X.Cómo.se.llama.el.área.en.tu.empresa.,
+         mate = X.Se.podía.tomar.mate.en.las.oficinas.de.tu.empresa...antes.del.COVID.19.,
+         idioma_exigencia = X.Te.exigieron.saber.un.idioma.extranjero..inglés..portugués..etc...para.entrar.a.trabajar.en.tu.empresa.,
+         idioma_porcentaje = X.Qué.porcentaje.del.tiempo.usas.el.idioma.extranjero.en.tu.puesto.actual.,
+         contactos_linkedin = "X.Cuántos.contactos.tenés.en.LinkedIn...poné.0.si.no.tenés.cuenta.de.LinkedIn.",
+         satisfaccion = X.Qué.tan.satisfecho.estás.con.tu.empresa.,
+         busqueda = X.Estás.buscando.trabajo.,
+         beneficios_expectativa = X.Qué.beneficios.te.gustaría.tener.,
+         rh_una_palabra = Definí.a.RRHH.con.una.sola.palabra,
+         pregunta_bizarra = X.Cuál.es.la.pregunta.más.bizarra.que.te.han.hecho.has.hecho.en.una.entrevista.,
+         teletrabajo = X.Estás.trabajando.desde.tu.casa.,
+         elementos = X.Qué.elementos.te.proveyó.la.empresa.para.que.puedas.trabajar.desde.tu.casa.,
+         valoracion_gestion_empresa = X.Cómo.valorarías.la.gestión.de.tu.empresa.en.este.nuevo.contexto.,
+         registro_fiscal = X.Cómo.estás.registrado.a.fiscalmente.,
+         anios_freelance = X.Hace.cuántos.años.trabajás.como.freelance.,
+         lugar_trabajo = X.Dónde.trabajás.habitualmente...sin.considerar.la.coyuntura.por.COVID.19.,
+         exporta = X.Exportás.tus.servicios.,
+         medio_pago_exterior = Si.exportás.servicios...a.través.de.qué.medios.de.pago.recibís.los.pagos.del.exterior.,
+         cuotas = X.Aceptás.pagos.en.cuotas.,
+         colaboracion_freelance = X.Trabajás.con.otros.freelancers.de.tu.mismo.rubro.,
+         servicio_busqueda = X.Tu.servicio.principal.está.relacionado.con.búsqueda.y.selección.,
+         busqueda_it = X.Te.dedicás.principalmente.a.realizar.búsquedas.de.IT.Tecnología.,
+         trabajo_a_riesgo =X.Trabajás.a.riesgo.,
+         coeficiente = X.Cuál.es.el.coeficiente.que.cobrás.por.tus.servicios.,
+         base_coeficiente = El.coeficiente.lo.calculás.sobre.,
+         garantia = X.Ofrecés.garantía.,
+         servicio_principal = X.Cuál.es.el.servicio.principal.que.brindas...si.brindás.más.de.un.servicio..elegí.el.que.más.ingresos.genere.,
+         valor_hora = X.Cuál.es.el.valor.hora.promedio.que.ofrecés...moneda.local.)
+
+
+```
+
+## Creación de dataframes
+
+Creo un dataframe (df) para freelancers, y otro para trabajadores en relación de dependencia.
+
+```{r nuevos-df}
+# Base de freelancers
+freelo <- kiwi %>% 
+  filter(trabajo == "Freelance")
+
+# Base de empleados en relación de dependencia
+rh <- kiwi %>% 
+  filter(trabajo == "Relación de Dependencia") 
+```
+
+## Corrección de campos
+
+En campos numéricos como `sueldo_bruto` hay gente que puso decimales con punto, y otros que usaron una coma, al campo original lo toma como lista, con lo cual deshago eso.
+
+También cambio el campo `puesto` a tipo `factor` para poder unificar algunos puestos posteriormente con funciones de la librería `forcats`.
+
+```{r limp-listas}
+rh <- rh %>% 
+  mutate(puesto = factor(puesto),
+         sueldo_bruto = as.numeric(unlist(sueldo_bruto)),
+         anios_en_empresa = as.numeric(unlist(anios_en_empresa)),
+         anios_en_puesto = as.numeric(unlist(anios_en_puesto)),
+         anios_experiencia = as.numeric(unlist(anios_experiencia)),
+         ajuste_porcentaje = as.numeric(unlist(ajuste_porcentaje)))
+
+
+puestos_dist1 <- rh %>% 
+  select(puesto) %>% 
+  distinct(puesto) %>% 
+  count() %>% 
+  pull()
+```
+
+Hay personas que cargaron puestos que no estaban contemplados en las opciones originales, o que los escribieron mal, o por ejemplo *Superintendente* que es muy propio de la minería y que equivale a un *Gerente* así que podemos unificarlos. Originalmente tenemos `r puestos_dist1` puestos distintos cargados.
+
+En el campo género tenemos una opción que es demasiado larga, así que también la acortamos.
+
+Hay algunos puestos que no pertenecen al alcance de la encuesta, así que los saco.
+
+```{r}
+rh <- rh %>% 
+  filter(puesto != "Juzgado Civil y Comercial",
+         puesto != "Programador",
+         puesto != "Cuidado") %>% 
+  mutate(genero = factor(genero),
+         genero = fct_collapse(genero, "Género Diverso" = c("Género diverso (género diverso / género fluido /otras minorías", "No binario")),
+         puesto = str_trim(puesto, side = "both"), # Elimina espacios vacíos al inicio y final del campo
+         puesto = fct_recode(puesto, "Gerente" = "Superintendente"),
+         puesto = fct_collapse(puesto, "HRBP" = c("Asesor", "Asesoramiento", "Senior Consultoría", "specialist"),
+                              "Asistente" = c("Aux", "Asistente RRHH")))
+
+puestos_dist2 <- rh %>% 
+  select(puesto) %>% 
+  distinct(puesto) %>% 
+  count() %>% 
+  pull()
+```
+
+Luego de esta limpieza nos quedamos con `r puestos_dist2` puestos diferentes.
+
+# Análisis Exploratorio
+
+## Análisis de cantidad de respuesta por país
+
+Agrego una columna `cuenta = 1` para poder sumar las respuestas que después agrupo. Podría hacer un `count()` pero bueno, soy así.
+
+Con datasets más grandes es una buena práctica porque sumar números es más eficiente que contar campos de texto, computacionalmente hablando.
+
+```{r paises}
+# Respuestas por países
+paises <- rh %>% 
+  select(pais) %>% 
+  mutate(cuenta = 1) %>% 
+  group_by(pais) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  filter(Cuenta > 4) %>% 
+  arrange(-Cuenta)
+
+paises_distintos <- rh %>% 
+  select(pais) %>% 
+  distinct(pais) %>% 
+  count() %>% 
+  pull()
+
+gt(paises) %>% 
+  tab_header(title = "Cantidad de respuestas por país",
+             subtitle = "Países con más de 5 respuestas") 
+```
+
+Obtuvimos respuestas de `r paises_distintos` países diferentes.
+
+## Respuestas por provincia
+
+Estas son las respuestas que recibimos por cada provincia de Argentina
+
+```{r}
+provincias <- rh %>% 
+  filter(pais == "Argentina") %>% 
+  mutate(cuenta = 1) %>% 
+  group_by(provincia) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+
+gt(provincias)
+```
+
+## Respuestas por rubro
+
+```{r}
+rh %>% 
+  select(rubro) %>% 
+  group_by(rubro) %>% 
+  count(sort = TRUE) %>% 
+  print(n = nrow(.)) # Imprime en consola todos los resultados
+
+```
+
+# Sueldos
+
+## Comparación de sueldos por países
+
+Comparamos los sueldos de los países que tienen al menos **4 respuestas.**
+
+Como primer paso creo un df con los tipos de cambio por país.
+
+```{r}
+# Sección para comparar los sueldos en dólares en los países con más de 5 respuestas.
+
+# Fuente: Banco Central de cada país al 19/10/2020
+# Dólar oficial - Precio de Venta
+
+pais <- c("Argentina", "Bolivia", "Chile", "México", "Paraguay", "Perú", "Uruguay")
+tipo_cambio <- c(82.5, 6.96, 795.68, 21.38, 7027.43, 3.597, 48.892)
+
+tc <- tibble (pais, tipo_cambio) # Creo una tabla con los tipos de cambio de los países con más de 5 respuestas
+
+```
+
+Luego, creo un df para comparar los sueldos por país sólo en los casos que obtuvimos al menos 5 respuestas.
+
+```{r}
+sueldos_dolar <- rh %>% 
+  select(puesto, sueldo_bruto, pais, tipo_contratacion) %>% 
+  filter(puesto != "Juzgado Civil y Comercial", puesto != "Pasante", 
+         puesto != "Programador", puesto != "Jefe de Proyecto", 
+         tipo_contratacion != "Pasante")
+
+paises <- rh %>% 
+  select(pais) %>% 
+  mutate(cuenta = 1) %>% 
+  group_by(pais) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  filter(Cuenta > 4) %>% 
+  arrange(-Cuenta)
+
+gt(paises) %>% 
+  tab_header(title = "Cantidad de respuestas por país",
+             subtitle = "Países con más de 5 respuestas") 
+```
+
+Analizo la cantidad de tipo de contrato **Part Time** que tengo para hacer la conversión
+
+```{r}
+# Controlar la cantidad de casos de contratos part time
+sueldos_dolar %>% 
+  group_by(tipo_contratacion) %>% 
+  count(pais) %>% 
+  filter(tipo_contratacion == "Part time")
+```
+
+Ahora todos los sueldos *Part Time* los tengo que convertir a full time. Asumiendo que la jornada de trabajo part time es de 6 horas, tengo que multiplicar el sueldo de los part time por **1.5**. Entonces, agrego una columna en donde si el tipo de contratación es `Part time` multiplica al sueldo por 1.5, y si no es `Part time` lo multiplica por 1.
+
+Con ese paso, ya puedo calcular el sueldo en dólares.
+
+```{r}
+sueldos_dolar <- sueldos_dolar %>% 
+  left_join(tc, by="pais") %>% 
+  mutate(multiplicador = if_else(tipo_contratacion == "Part time", 1.5, 1),
+         sueldo_ft = sueldo_bruto * multiplicador,    # Hace la equivalencia de un sueldo part time a full time
+         sueldo_dolar = sueldo_ft/tipo_cambio,  # Convierto los sueldos a dólares
+         cuenta = 1)
+
+```
+
+El siguiente paso es limpiar los resultados. Para eso vamos a recortar las respuestas usando los sueldos que estén dentro de los percentiles 5 y 95.
+
+```{r}
+numericos <- profiling_num(sueldos_dolar)
+poda_p05 <- numericos[5,6]
+poda_p95 <- numericos[5,10]
+
+media_pais <- sueldos_dolar %>% 
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay", "Perú"),
+         between(sueldo_dolar,poda_p05,poda_p95)) %>% 
+  group_by(pais) %>% 
+  summarise(sueldop = list(mean_se(sueldo_dolar)),
+            cant = sum(cuenta)) %>% 
+  unnest(cols = c(sueldop)) %>%
+  print(n = nrow(.)) 
+ 
+```
+
+El sueldo promedio por país lo vemos reflejado en la columna `y` . Las columnas `ymin` e `ymax` son los límites del sueldo promedio menos un desvío estándar, y más un desvío estándar respectivamente.
+
+Ahora podemos graficarlo.
+
+```{r}
+sueldo_dolar_pais <- sueldos_dolar %>% 
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay", "Perú"),
+         between(sueldo_dolar, 400,3000))
+
+# Gráfico
+ggplot(media_pais, aes(x = reorder(pais, -y), y =  y))+
+  geom_col(fill = "#344D7E", alpha = 0.85) +
+  geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
+  geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), 
+             alpha = 0.3, size = 2, color = "#75838F")+
+  geom_text(aes(label = round(x=y, 0), vjust = 1.5, fontface = "bold"),size = 4, color = "white")+
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
+  labs(title = "Mediana salarial por país",
+       subtitle = "Sueldos de RRHH en U$S",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con 5 respuestas o más",
+       x = "", y = "") + 
+  estilo
+```
+
+# Sueldos Argentina
+
+Dada la baja cantidad de respuestas de otros países, sólo podemos hacer análisis representativos de Argentina de puestos y de género.
+
+```{r rh-ar}
+rh_ar <- rh %>% 
+  filter(pais == "Argentina")
+
+```
+
+## Análisis por rubros
+
+Veamos la **mediana** salarial por rubro.
+
+```{r mediana-rubro}
+rubro <- rh_ar %>% 
+  select(rubro, sueldo_bruto) %>% 
+  group_by(rubro) %>% 
+  summarise(mediana_sueldo = median(sueldo_bruto),
+            respuestas = n()) %>% 
+  arrange(-respuestas)
+
+datatable(rubro)
+```
+
+```{r rubro-plot}
+rubro %>% 
+  filter(respuestas > 12) %>% 
+  ggplot(aes(x = mediana_sueldo, y = reorder(rubro, mediana_sueldo))) +
+  geom_col(fill = azul) +
+  geom_text(aes(label = round(x=mediana_sueldo, 0), hjust = 1.5),size = 3, color = "white")+
+  labs(title = "Mediana salarial por rubro",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "",
+       caption = fuente) +
+  scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  estilov +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+```
