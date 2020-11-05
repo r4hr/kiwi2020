@@ -19,9 +19,9 @@ options(scipen = 999)   # Modifica la visualización de los ejes numérico a val
 
 loadfonts(quiet = TRUE) # Permite cargar en R otros tipos de fuentes.
 
-# Estilo de los gráficos
+# Estilo limpio sin líneas de fondo
 estilo <- theme(panel.grid = element_blank(),
-                plot.background = element_rect(fill = "#fbfcfc"),
+                plot.background = element_rect(fill = "#FBFCFC"),
                 panel.background = element_blank(),
                 text = element_text(family = "Roboto"))
 
@@ -29,19 +29,21 @@ estilo <- theme(panel.grid = element_blank(),
 estilov <- theme(panel.grid = element_blank(),
                  plot.background = element_rect(fill = "#FBFCFC"),
                  panel.background = element_blank(),
-                 panel.grid.major.x = element_line(color = "#DAD6D8"),
+                 axis.line.x = element_line(color = "#AEB6BF"),
                  text = element_text(family = "Roboto"))
 
 # Estilo limpio con líneas de referencia horizontales en gris claro
 estiloh <- theme(panel.grid = element_blank(),
                  plot.background = element_rect(fill = "#FBFCFC"),
                  panel.background = element_blank(),
-                 panel.grid.major.y = element_line(color = "#DAD6D8"),
+                 axis.line.y = element_line(color = "#AEB6BF"),
                  text = element_text(family = "Roboto"))
 
 genero <- c("#8624F5", "#1FC3AA", "#FFD129", "#75838F") #Violeta - Verde - Amarillo - Gris
 
 colores <-  c("#8624F5", "#1FC3AA")
+
+azul <- "#344D7E"
 
 # Creo un objeto con un texto que se va a repetir mucho a lo largo del análisis
 fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
@@ -398,6 +400,46 @@ ggplot(media_pais, aes(x = reorder(pais, -y), y =  y))+
   estilo
 
 
+# Sueldos Argentina --------------------------------------
+rh_ar <- rh %>% 
+  filter(pais == "Argentina")
+
+
+# Poda de sueldos entre percentiles 5 y 95
+numericos2 <- rh_ar %>% 
+  select_if(is.numeric) %>% 
+  profiling_num()
+
+p_05 <- numericos2[5,6]
+p_95 <-numericos2[5,10]
+
+rh_ar <- rh_ar %>% 
+  filter(between(sueldo_bruto, p_05, p_95))
+
+rubro <- rh_ar %>% 
+  select(rubro, sueldo_bruto) %>% 
+  group_by(rubro) %>% 
+  summarise(mediana_sueldo = median(sueldo_bruto),
+            respuestas = n()) %>% 
+  arrange(-respuestas)
+
+print(rubro, n = 20)
+
+
+rubro %>% 
+  filter(respuestas > 12) %>% 
+  ggplot(aes(x = mediana_sueldo, y = reorder(rubro, mediana_sueldo))) +
+  geom_col(fill = azul) +
+  geom_text(aes(label = round(x=mediana_sueldo, 0), hjust = 1.5),size = 3, color = "white") +
+  labs(title = "Mediana salarial por rubro",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "",
+       caption = fuente) +
+  scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  estilov +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
 # Representación en puestos de liderazgo ------------------
 
 
@@ -674,7 +716,7 @@ brecha <- liderazgo %>%
                                             "HRBP", "Jefe", "Responsable","Gerente","Director" ))) %>% 
   select(-pais) %>% 
   group_by(genero, puesto) %>% 
-  summarise(media_salarial = mean(sueldo))
+  summarise(media_salarial = mean(sueldo_bruto))
 
 
 
