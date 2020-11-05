@@ -759,8 +759,7 @@ view(puest)
 puestos3
 
 gt(puestos3) %>% 
-  tab_header(title = "Sueldos Promedio por puestos",
-             subtitle ="En Argentina")
+  tab_header(title = "Sueldos Promedio por puestos")
 
 #agrupar los casos unicos en una categoria, que sea otros. 
 
