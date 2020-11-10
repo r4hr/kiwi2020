@@ -53,7 +53,7 @@ fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
 
 # Carga de datos ------------------------------------------
 
-
+original <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
 
 
 
@@ -156,12 +156,22 @@ rh %>%
 rh <- rh %>% 
   filter(puesto != "Juzgado Civil y Comercial",
          puesto != "Programador",
-         puesto != "Cuidado") %>% 
+         puesto != "Cuidado",
+         puesto != "Asesor",
+         puesto != "Jefe de Proyecto") %>% 
   mutate(puesto = str_trim(puesto, side = "both"), # Elimina espacios vacíos
-         puesto = fct_collapse_recode(puesto, "Gerente" = "Superintendente"),
-         puesto = fct_collapse(puesto, "HRBP" = c("Asesor", "Asesoramiento", 
-                                                  "Senior Consultoría", "specialist"),
-                                      "Administrativo" = c("Asistente","Aux", "Asistente RRHH"))) 
+         puesto = fct_collapse(puesto, "Gerente" = "Superintendente"),
+         puesto = fct_collapse(puesto, "Director" = "Director ( escalafón municipal)"),
+         puesto = fct_collapse(puesto, "HRBP" = c("Senior Consultoría", "specialist", "especialista",
+                                                  "Especialista en selección IT", "Recruiter")),
+         puesto = fct_collapse(puesto, "Responsable" = c("Coordinación", "Coordinador de Payroll",
+                                                         "Encargado", "Supervisor")),
+         puesto = fct_collapse(puesto, "Administrativo" = c("Asistente", "Asistente RRHH", "Aux", 
+                                                            "Capacitador", "Consultor Ejecutivo",
+                                                            "consultor jr")),
+         puesto = fct_collapse(puesto, "Analista" = c("Asesoramiento", "Consultor", "Generalista", 
+                                                      "Reclutadora", "Selectora", "Senior"))) %>% 
+  select(Marca.temporal:valoracion_gestion_empresa)
 
 # Cuento la cantidad de puestos diferentes luego de la limpieza.
 rh %>% 
@@ -246,34 +256,6 @@ liderazgo %>%
   theme(legend.position = "bottom")
 
 
-#liderazgo %>% 
-#  filter(puesto %in% c("Gerente", "HRBP", "Analista")) %>% 
-#  mutate(puesto = factor(puesto, levels = c("Gerente", "HRBP", "Analista"))) %>% 
-#  group_by(puesto, genero) %>% 
-#  summarise(suel_prom = mean(sueldo_bruto)) %>% 
-#  ggplot(aes(puesto, suel_prom, fill = genero))+
-#  geom_col(position = "dodge")+
-#  labs(title = "Sueldo promedio por puesto y género en Argentina",
-#       subtitle = "En pesos argentinos",
-#       x= "", y = "", fill = "Género",
-#       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")+
-#  theme_minimal() +
-#  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
-
-#liderazgo %>% 
-#  filter(puesto %in% c("Gerente", "HRBP", "Analista")) %>% 
-#  mutate(puesto = factor(puesto, levels = c("Gerente", "HRBP", "Analista"))) %>% 
-#  group_by(puesto, genero) %>% 
-#  summarise(suel_prom = mean(sueldo_bruto)) %>% 
-#  ggplot(aes(puesto, suel_prom, fill = genero))+
-#  geom_col(position = "dodge")+
-#  labs(title = "Sueldo promedio por puesto y género en Argentina",
-#       subtitle = "En pesos argentinos",
-#       x= "", y = "", fill = "Género",
-#       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")+
-#  theme_minimal() +
-#  scale_fill_colorblind()+
-#  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
 
 
 #### Análisis de preguntas bizarras####
@@ -367,6 +349,8 @@ sueldos_dolar <- sueldos_dolar %>%
          cuenta = 1)
 
 summary(sueldos_dolar)
+
+
 
 numericos <- profiling_num(sueldos_dolar)
 poda_p05 <- numericos[5,6]
@@ -628,82 +612,7 @@ gt(nombres) %>%
       rows = nombre == "Oficina De Personal"
     ))
 
-# Brecha salarial prueba -------------------------------------------------
-library(eph)
-library(ggthemes)
 
-
-base_individual <- get_microdata(year = 2019, trimester = 3, type = "individual")
-
-base_individual <- base_individual %>% 
-  mutate(Sexo = as.character(CH04),
-         Sexo = case_when(Sexo=="1" ~ "Varones",
-                          Sexo=="2" ~ "Mujeres"),
-         PP04D_COD = as.character(PP04D_COD),
-         PP04D_COD = case_when(nchar(PP04D_COD) == 5 ~ PP04D_COD,
-                               nchar(PP04D_COD) == 4 ~ paste0("0", PP04D_COD),
-                               nchar(PP04D_COD) == 3 ~ paste0("00", PP04D_COD),
-                               nchar(PP04D_COD) == 2 ~ paste0("000", PP04D_COD),
-                               nchar(PP04D_COD) == 1 ~ paste0("0000", PP04D_COD)),
-         CALIFICACION = substr(PP04D_COD, 5, 5),
-         CALIFICACION = case_when(CALIFICACION=="1" ~ "Profesionales",
-                                  CALIFICACION=="2" ~ "Técnicos",
-                                  CALIFICACION=="3" ~ "Operativos",
-                                  CALIFICACION=="4" ~ "No Calificados",
-                                  TRUE ~ "0"),
-         CALIFICACION = factor(CALIFICACION, c("No Calificados", "Operativos", "Técnicos", "Profesionales")),
-         JERARQUIA = substr(PP04D_COD, 3, 3),
-         JERARQUIA = case_when(JERARQUIA %in% c("0", "2") ~ "Dirección o Jefes",
-                               JERARQUIA=="1" ~ "Cuentapropia",
-                               JERARQUIA=="3" ~ "Trabajadores Asalariados",
-                               TRUE ~ "0"),
-         JERARQUIA = factor(JERARQUIA, c("Dirección o Jefes", "Trabajadores Asalariados", "Cuentapropia")),
-         NIVEL_EDUCATIVO = case_when(NIVEL_ED %in% c(1, 7) ~ "Sin Instrucción",
-                                     NIVEL_ED %in% c(2, 3) ~ "Primaria",
-                                     NIVEL_ED %in% c(4, 5) ~ "Secundaria",
-                                     NIVEL_ED == 6         ~ "Superior",
-                                     NIVEL_ED == 9         ~ "NS/NR"),
-         NIVEL_EDUCATIVO = factor(NIVEL_EDUCATIVO, levels = c("Sin Instrucción", "Primaria", "Secundaria", "Superior")),
-         GRUPO_EDAD = case_when(CH06 >= 14 & CH06 <= 29 ~ "de 14 a 29 años",
-                                CH06 >= 30 & CH06 <= 64 ~ "de 30 a 64 años"))
-
-# colores = c("#aa165a","#16aa66")
-colores = c("#FE1764", "#00BDD6")
-
-# Ocupades
-tabla8 <- base_individual %>% 
-  filter(CALIFICACION != "0",
-         ESTADO == 1) %>% 
-  group_by(Sexo, CALIFICACION) %>% 
-  summarise(IOP_mensual  = round(weighted.mean(P21, PONDIIO), 2)) 
-
-
-tabla8_graf <- tabla8 %>% 
-  pivot_wider(., names_from = Sexo, values_from = IOP_mensual) %>% 
-  mutate(brecha = percent((Varones-Mujeres)/Varones, 1),
-         x = (Varones+Mujeres)/2)
-
-tabla8_graf
-
-library(ggalt)
-
-ggplot(tabla8_graf, 
-       aes(x = Mujeres, xend = Varones, y = CALIFICACION, 
-           group = CALIFICACION, label = brecha)) +
-  geom_dumbbell(color = "#808080",
-                size_x = 3, size_xend = 3,
-                colour_x = colores[1],
-                colour_xend = colores[2]) +
-  geom_text(data = tabla8_graf, 
-            aes(x, CALIFICACION, label = brecha), nudge_y = .2) +
-  labs(title = "Brecha de ingresos de la ocupación principal
-       por sexo y calificación ocupacional",
-       x = "Ingreso Mensual",
-       y = NULL, 
-       caption = fuente) +
-  scale_color_manual(values = colores) +
-  theme_minimal()
- 
 
 # Brecha salarial posta ------------------------------------
 

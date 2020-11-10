@@ -14,16 +14,18 @@ library(ggthemes)       # Amplía las posibilidades estéticas de ggplot2
 library(scales)         # Permite cambiar los formatos de decimales, de porcentajes, etc.
 library(ggalt)          # Nuevos tipos de geom para ggplot2. Para realizar el gráfico de gap salarial
 library(funModeling)    # Para explorar datos y modelos
+library(DT)             # Dar formato tablas largas
 
-options(scipen = 999)   # Modifica la visualización de los ejes numérico a valores nominales
+options(scipen = 999)
 
-loadfonts(quiet = TRUE) # Permite cargar en R otros tipos de fuentes.
+loadfonts(quiet = TRUE)
 
-# Estilo limpio sin líneas de fondo
+# Estilo de los gráficos
 estilo <- theme(panel.grid = element_blank(),
                 plot.background = element_rect(fill = "#FBFCFC"),
                 panel.background = element_blank(),
                 text = element_text(family = "Roboto"))
+
 
 # Estilo limpio con líneas de referencia verticales en gris claro
 estilov <- theme(panel.grid = element_blank(),
@@ -40,11 +42,13 @@ estiloh <- theme(panel.grid = element_blank(),
                  axis.line.y = element_line(color = "#AEB6BF"),
                  text = element_text(family = "Roboto"))
 
+
 genero <- c("#8624F5", "#1FC3AA", "#FFD129", "#75838F") #Violeta - Verde - Amarillo - Gris
 
 colores <-  c("#8624F5", "#1FC3AA")
 
 azul <- "#344D7E"
+
 
 # Creo un objeto con un texto que se va a repetir mucho a lo largo del análisis
 fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
@@ -53,18 +57,20 @@ fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
 # Carga de datos ------------------------------------------
 
 
-original <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
+kiwi <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
 
 
+# Preprocesamiento -----------------------------------------
 
-# Preprocesamiento ---------------------------------------
 kiwi <- original
 
 limpios <- make.names(colnames(kiwi))
 colnames(kiwi) <- limpios
 
-names(kiwi)
+# Elimino este objeto que no voy a volver a usar
 rm(limpios)
+
+
 
 kiwi <- kiwi %>% 
   select(-X.Querés.contestar.más.preguntas....31, 
@@ -151,20 +157,28 @@ rh %>%
             total = n()) %>% 
   print(n = nrow(.))
 
-  
 # Unificación de puestos
 rh <- rh %>% 
   filter(puesto != "Juzgado Civil y Comercial",
          puesto != "Programador",
-         puesto != "Cuidado") %>% 
+         puesto != "Cuidado",
+         puesto != "Asesor",
+         puesto != "Jefe de Proyecto") %>% 
   mutate(puesto = str_trim(puesto, side = "both"), # Elimina espacios vacíos
-         puesto = fct_recode(puesto, "Gerente" = "Superintendente"),
-         puesto = fct_collapse(puesto, "HRBP" = c("Asesor", "Asesoramiento", 
-                                                  "Senior Consultoría", "specialist"),
-                                      "Administrativo" = c("Asistente","Aux", "Asistente RRHH"))) 
+         puesto = fct_collapse(puesto, "Gerente" = "Superintendente"),
+         puesto = fct_collapse(puesto, "Director" = "Director ( escalafón municipal)"),
+         puesto = fct_collapse(puesto, "HRBP" = c("Senior Consultoría", "specialist", "especialista",
+                                                  "Especialista en selección IT", "Recruiter")),
+         puesto = fct_collapse(puesto, "Responsable" = c("Coordinación", "Coordinador de Payroll",
+                                                         "Encargado", "Supervisor")),
+         puesto = fct_collapse(puesto, "Administrativo" = c("Asistente", "Asistente RRHH", "Aux", 
+                                                            "Capacitador", "Consultor Ejecutivo",
+                                                            "consultor jr")),
+         puesto = fct_collapse(puesto, "Analista" = c("Asesoramiento", "Consultor", "Generalista", 
+                                                      "Reclutadora", "Selectora", "Senior"))) %>% 
+  select(Marca.temporal:valoracion_gestion_empresa)
 
-# Cuento la cantidad de puestos diferentes luego de la limpieza.
-rh %>% 
+puestos_dist2 <- rh %>% 
   select(puesto) %>% 
   distinct(puesto) %>% 
   count() %>% 
@@ -172,39 +186,31 @@ rh %>%
 
 # Análisis exploratorio ----------------------------------
 
-glimpse(rh)
+glimpse(kiwi)
 
-rh %>% 
-  group_by(puesto) %>% 
-  summarise(sueldo_mediana = median(sueldo_bruto),
-            total = n()) %>% 
-  print(n = nrow(.))
 
-# Países de donde recibimos respuestas
-rh %>% 
-  select(pais) %>% 
-  distinct(pais) %>% 
-  count() %>% 
-  pull()
+
+
 
 # Respuestas por países
-paises <- rh %>% 
-  select(pais) %>% 
+paises <- kiwi %>% 
+  select(`País en el que trabajas`) %>% 
   mutate(cuenta = 1) %>% 
-  group_by(pais) %>% 
+  group_by(`País en el que trabajas`) %>% 
   summarise(Cuenta = sum(cuenta)) %>% 
   filter(Cuenta > 4) %>% 
   arrange(-Cuenta)
 
+
 gt(paises) %>% 
-  tab_header(title = "Cantidad de respuestas por país",
-             subtitle = "Países con más de 5 respuestas") 
+  tab_header(title = "Cantidad de respuestas por País",
+             subtitle = "Países con más de 5 respuestas") #agregue esto
 
 # Respuestas por provincia (Sólo para Argentina)
-provincias <- rh %>% 
-  filter(pais == "Argentina") %>% 
+provincias <- kiwi %>% 
+  filter(`País en el que trabajas` == "Argentina") %>% 
   mutate(cuenta = 1) %>% 
-  group_by(provincia) %>% 
+  group_by(`Provincia donde trabajas`) %>% 
   summarise(Cuenta = sum(cuenta)) %>% 
   arrange(-Cuenta)
 
@@ -212,30 +218,41 @@ provincias <- rh %>%
 gt(provincias)
 
 
-liderazgo <- rh %>% 
-  select(genero, puesto,pais ,sueldo_bruto)
+liderazgo <- kiwi %>% 
+  select(Género, `¿En qué puesto trabajás?`,`País en el que trabajas` ,`¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
 
-# Respuestas por rubro
-rh %>% 
-  select(rubro) %>% 
-  group_by(rubro) %>% 
+names(liderazgo) <- c("genero", "puesto","pais", "sueldo")
+
+
+head(liderazgo)
+
+kiwi %>% 
+  select(`Rubro de la empresa`) %>% 
+  group_by(`Rubro de la empresa`) %>% 
   count(sort = TRUE) %>% 
-  print(n = nrow(.)) # Imprime en consola todos los resultados
+  print(n = nrow(.))
 
 # Exploración para Argentina
+
+
 liderazgo <- liderazgo %>% 
   filter(!is.na(puesto)) %>% 
-  mutate(cuenta = 1) %>% 
+  mutate(sueldo = as.numeric(unlist(sueldo)),
+         cuenta = 1) %>% 
   filter(pais == "Argentina")
 
+view(liderazgo)
+
+
 liderazgo %>% group_by(puesto, genero) %>% 
-  summarise(sueldo_prom = mean(sueldo_bruto), 
+  summarise(sueldo_prom = mean(sueldo), 
             cuenta = sum(cuenta)) %>% 
   print(n = nrow(.))
 
+
 liderazgo %>% 
   group_by(puesto, genero) %>% 
-  summarise(salarios = list(mean_se(sueldo_bruto))) %>% 
+  summarise(salarios = list(mean_se(sueldo))) %>% 
   unnest(salarios) %>% 
   ggplot(aes(x = puesto, y = y, fill = genero))+
   geom_col(position = "dodge")+
@@ -245,34 +262,35 @@ liderazgo %>%
   theme(legend.position = "bottom")
 
 
-#liderazgo %>% 
-#  filter(puesto %in% c("Gerente", "HRBP", "Analista")) %>% 
-#  mutate(puesto = factor(puesto, levels = c("Gerente", "HRBP", "Analista"))) %>% 
-#  group_by(puesto, genero) %>% 
-#  summarise(suel_prom = mean(sueldo_bruto)) %>% 
-#  ggplot(aes(puesto, suel_prom, fill = genero))+
-#  geom_col(position = "dodge")+
-#  labs(title = "Sueldo promedio por puesto y género en Argentina",
-#       subtitle = "En pesos argentinos",
-#       x= "", y = "", fill = "Género",
-#       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")+
-#  theme_minimal() +
-#  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
 
-#liderazgo %>% 
-#  filter(puesto %in% c("Gerente", "HRBP", "Analista")) %>% 
-#  mutate(puesto = factor(puesto, levels = c("Gerente", "HRBP", "Analista"))) %>% 
-#  group_by(puesto, genero) %>% 
-#  summarise(suel_prom = mean(sueldo_bruto)) %>% 
-#  ggplot(aes(puesto, suel_prom, fill = genero))+
-#  geom_col(position = "dodge")+
-#  labs(title = "Sueldo promedio por puesto y género en Argentina",
-#       subtitle = "En pesos argentinos",
-#       x= "", y = "", fill = "Género",
-#       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")+
-#  theme_minimal() +
-#  scale_fill_colorblind()+
-#  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
+liderazgo %>% 
+  filter(puesto %in% c("Gerente", "HRBP", "Analista")) %>% 
+  mutate(puesto = factor(puesto, levels = c("Gerente", "HRBP", "Analista"))) %>% 
+  group_by(puesto, genero) %>% 
+  summarise(suel_prom = mean(sueldo)) %>% 
+  ggplot(aes(puesto, suel_prom, fill = genero))+
+  geom_col(position = "dodge")+
+  labs(title = "Sueldo promedio por puesto y género en Argentina",
+       subtitle = "En pesos argentinos",
+       x= "", y = "", fill = "Género",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")+
+  theme_minimal() +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
+
+liderazgo %>% 
+  filter(puesto %in% c("Gerente", "HRBP", "Analista")) %>% 
+  mutate(puesto = factor(puesto, levels = c("Gerente", "HRBP", "Analista"))) %>% 
+  group_by(puesto, genero) %>% 
+  summarise(suel_prom = mean(sueldo)) %>% 
+  ggplot(aes(puesto, suel_prom, fill = genero))+
+  geom_col(position = "dodge")+
+  labs(title = "Sueldo promedio por puesto y género en Argentina",
+       subtitle = "En pesos argentinos",
+       x= "", y = "", fill = "Género",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")+
+  theme_minimal() +
+  scale_fill_colorblind()+
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
 
 
 #### Análisis de preguntas bizarras####
@@ -319,7 +337,6 @@ coment <- coment %>%
   mutate(Comentarios = as.character(Comentarios)) %>% 
   unnest_tokens(palabra, Comentarios)
 
-
 coment_bi <- coment %>% 
   anti_join(vacias) %>% 
   anti_join(vacias_custom)
@@ -344,50 +361,61 @@ tc <- tibble (pais, tipo_cambio) # Creo una tabla con los tipos de cambio de los
 
 # Preparación de datos
 
-sueldos_dolar <- rh %>% 
-  select(puesto, sueldo_bruto, pais, tipo_contratacion) %>% 
+sueldos_dolar <- kiwi %>% 
+  filter(Trabajo !="Freelance") %>% 
+  select(Género, `¿En qué puesto trabajás?`,`País en el que trabajas` ,
+         `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`,
+         `Tipo de contratación`)
+
+names(sueldos_dolar) <- c("genero", "puesto","pais", "sueldo", "contrato")
+
+# Eliminar los puestos que no sirven al análisis
+sueldos_dolar <- sueldos_dolar %>% 
+  mutate(puesto = str_trim(puesto, side = "both")) %>% 
   filter(puesto != "Juzgado Civil y Comercial", puesto != "Pasante", 
          puesto != "Programador", puesto != "Jefe de Proyecto", 
-         tipo_contratacion != "Pasante")
+         contrato != "Pasante")
 
 # Controlar la cantidad de casos de contratos part time
 sueldos_dolar %>% 
-  group_by(tipo_contratacion) %>% 
+  group_by(contrato) %>% 
   count(pais) %>% 
-  filter(tipo_contratacion == "Part time")
+  filter(contrato == "Part time")
 
 # Agrego un multiplicador de sueldos para convertir los sueldos part time en full time
 sueldos_dolar <- sueldos_dolar %>% 
   left_join(tc, by="pais") %>% 
-  mutate(multiplicador = if_else(tipo_contratacion == "Part time", 1.5, 1),
-         sueldo_ft = sueldo_bruto * multiplicador,    # Hace la equivalencia de un sueldo part time a full time
+  mutate(multiplicador = if_else(contrato == "Part time", 1.5, 1),
+         sueldo = as.numeric(unlist(sueldo)),
+         sueldo_ft = sueldo * multiplicador,    # Hace la equivalencia de un sueldo part time a full time
          sueldo_dolar = sueldo_ft/tipo_cambio,  # Convierto los sueldos a dólares
          cuenta = 1)
 
 summary(sueldos_dolar)
 
-numericos <- profiling_num(sueldos_dolar)
+numericos <- funModeling::profiling_num(sueldos_dolar)
 poda_p05 <- numericos[5,6]
 poda_p95 <- numericos[5,10]
 
-# Dado que los percentiles 5 y 95 están en U$400 y 2689 respectivamente, 
+# Dado que los percentiles 5 y 95 están en U$412 y 2795 respectivamente, 
 # podamos todo lo que esté fuera de ese rango
 
-media_pais <- sueldos_dolar %>% 
+mediana_pais <- sueldos_dolar %>% 
   filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay", "Perú"),
          between(sueldo_dolar,poda_p05,poda_p95)) %>% 
   group_by(pais) %>% 
   summarise(sueldop = list(mean_se(sueldo_dolar)),
             cant = sum(cuenta)) %>% 
   unnest(cols = c(sueldop)) %>%
+  filter(cant>4) %>% 
   print(n = nrow(.)) 
  
 sueldo_dolar_pais <- sueldos_dolar %>% 
-  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay", "Perú"),
+  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay"), 
          between(sueldo_dolar, 400,3000))
   
 # Gráfico
-ggplot(media_pais, aes(x = reorder(pais, -y), y =  y))+
+ggplot(mediana_pais, aes(x = reorder(pais, -y), y =  y))+
   geom_col(fill = "#344D7E", alpha = 0.85) +
   geom_errorbar(aes(ymin = ymin,ymax = ymax), position = "dodge", color = "#75838F")+
   geom_point(data = sueldo_dolar_pais, aes(x = pais, y = sueldo_dolar), 
@@ -396,50 +424,10 @@ ggplot(media_pais, aes(x = reorder(pais, -y), y =  y))+
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))+
   labs(title = "Mediana salarial por país",
        subtitle = "Sueldos de RRHH en U$S",
-       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con 5 respuestas o más",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam \n Países con más de 5 respuestas",
        x = "", y = "") + 
   estilo
 
-
-# Sueldos Argentina --------------------------------------
-rh_ar <- rh %>% 
-  filter(pais == "Argentina")
-
-
-# Poda de sueldos entre percentiles 5 y 95
-numericos2 <- rh_ar %>% 
-  select_if(is.numeric) %>% 
-  profiling_num()
-
-p_05 <- numericos2[5,6]
-p_95 <-numericos2[5,10]
-
-rh_ar <- rh_ar %>% 
-  filter(between(sueldo_bruto, p_05, p_95))
-
-rubro <- rh_ar %>% 
-  select(rubro, sueldo_bruto) %>% 
-  group_by(rubro) %>% 
-  summarise(mediana_sueldo = median(sueldo_bruto),
-            respuestas = n()) %>% 
-  arrange(-respuestas)
-
-print(rubro, n = 20)
-
-
-rubro %>% 
-  filter(respuestas > 12) %>% 
-  ggplot(aes(x = mediana_sueldo, y = reorder(rubro, mediana_sueldo))) +
-  geom_col(fill = azul) +
-  geom_text(aes(label = round(x=mediana_sueldo, 0), hjust = 1.5),size = 3, color = "white") +
-  labs(title = "Mediana salarial por rubro",
-       subtitle = "Datos de Argentina - en AR$",
-       x = "", y = "",
-       caption = fuente) +
-  scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
-  estilov +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
 
 # Representación en puestos de liderazgo ------------------
 
@@ -474,7 +462,7 @@ div$ymin <- c(0, head(div$ymax, n=-1))
 
 # Compute label position
 div$labelPosition <- (div$ymax + div$ymin) / 2
-
+labelPositio
 # Compute a good label
 div$label <- paste0(div$genero, "\n Cant: ", div$n)
 
@@ -507,7 +495,6 @@ gt(div %>% select(genero, n, freq)) %>%
 # Representación en puestos de liderazgo
 
 
-div
 
 kiwi %>% 
   filter(Trabajo != "Freelance") %>% 
@@ -627,80 +614,83 @@ gt(nombres) %>%
     ))
 
 # Brecha salarial prueba -------------------------------------------------
-library(eph)
-library(ggthemes)
+# Esto lo pueden borrar en sus scripts.
+# Esta parte del repo era sólo para practicar el gráfico de gap salarial
+
+#library(eph)
+#library(ggthemes)
 
 
-base_individual <- get_microdata(year = 2019, trimester = 3, type = "individual")
+#base_individual <- get_microdata(year = 2019, trimester = 3, type = "individual")
 
-base_individual <- base_individual %>% 
-  mutate(Sexo = as.character(CH04),
-         Sexo = case_when(Sexo=="1" ~ "Varones",
-                          Sexo=="2" ~ "Mujeres"),
-         PP04D_COD = as.character(PP04D_COD),
-         PP04D_COD = case_when(nchar(PP04D_COD) == 5 ~ PP04D_COD,
-                               nchar(PP04D_COD) == 4 ~ paste0("0", PP04D_COD),
-                               nchar(PP04D_COD) == 3 ~ paste0("00", PP04D_COD),
-                               nchar(PP04D_COD) == 2 ~ paste0("000", PP04D_COD),
-                               nchar(PP04D_COD) == 1 ~ paste0("0000", PP04D_COD)),
-         CALIFICACION = substr(PP04D_COD, 5, 5),
-         CALIFICACION = case_when(CALIFICACION=="1" ~ "Profesionales",
-                                  CALIFICACION=="2" ~ "Técnicos",
-                                  CALIFICACION=="3" ~ "Operativos",
-                                  CALIFICACION=="4" ~ "No Calificados",
-                                  TRUE ~ "0"),
-         CALIFICACION = factor(CALIFICACION, c("No Calificados", "Operativos", "Técnicos", "Profesionales")),
-         JERARQUIA = substr(PP04D_COD, 3, 3),
-         JERARQUIA = case_when(JERARQUIA %in% c("0", "2") ~ "Dirección o Jefes",
-                               JERARQUIA=="1" ~ "Cuentapropia",
-                               JERARQUIA=="3" ~ "Trabajadores Asalariados",
-                               TRUE ~ "0"),
-         JERARQUIA = factor(JERARQUIA, c("Dirección o Jefes", "Trabajadores Asalariados", "Cuentapropia")),
-         NIVEL_EDUCATIVO = case_when(NIVEL_ED %in% c(1, 7) ~ "Sin Instrucción",
-                                     NIVEL_ED %in% c(2, 3) ~ "Primaria",
-                                     NIVEL_ED %in% c(4, 5) ~ "Secundaria",
-                                     NIVEL_ED == 6         ~ "Superior",
-                                     NIVEL_ED == 9         ~ "NS/NR"),
-         NIVEL_EDUCATIVO = factor(NIVEL_EDUCATIVO, levels = c("Sin Instrucción", "Primaria", "Secundaria", "Superior")),
-         GRUPO_EDAD = case_when(CH06 >= 14 & CH06 <= 29 ~ "de 14 a 29 años",
-                                CH06 >= 30 & CH06 <= 64 ~ "de 30 a 64 años"))
+#base_individual <- base_individual %>% 
+#  mutate(Sexo = as.character(CH04),
+#         Sexo = case_when(Sexo=="1" ~ "Varones",
+#                          Sexo=="2" ~ "Mujeres"),
+#         PP04D_COD = as.character(PP04D_COD),
+#         PP04D_COD = case_when(nchar(PP04D_COD) == 5 ~ PP04D_COD,
+#                               nchar(PP04D_COD) == 4 ~ paste0("0", PP04D_COD),
+#                               nchar(PP04D_COD) == 3 ~ paste0("00", PP04D_COD),
+#                               nchar(PP04D_COD) == 2 ~ paste0("000", PP04D_COD),
+#                               nchar(PP04D_COD) == 1 ~ paste0("0000", PP04D_COD)),
+#         CALIFICACION = substr(PP04D_COD, 5, 5),
+#         CALIFICACION = case_when(CALIFICACION=="1" ~ "Profesionales",
+#                                  CALIFICACION=="2" ~ "Técnicos",
+#                                  CALIFICACION=="3" ~ "Operativos",
+#                                  CALIFICACION=="4" ~ "No Calificados",
+#                                  TRUE ~ "0"),
+#         CALIFICACION = factor(CALIFICACION, c("No Calificados", "Operativos", "Técnicos", "Profesionales")),
+#         JERARQUIA = substr(PP04D_COD, 3, 3),
+#         JERARQUIA = case_when(JERARQUIA %in% c("0", "2") ~ "Dirección o Jefes",
+#                               JERARQUIA=="1" ~ "Cuentapropia",
+#                               JERARQUIA=="3" ~ "Trabajadores Asalariados",
+#                               TRUE ~ "0"),
+#         JERARQUIA = factor(JERARQUIA, c("Dirección o Jefes", "Trabajadores Asalariados", "Cuentapropia")),
+#         NIVEL_EDUCATIVO = case_when(NIVEL_ED %in% c(1, 7) ~ "Sin Instrucción",
+#                                     NIVEL_ED %in% c(2, 3) ~ "Primaria",
+#                                     NIVEL_ED %in% c(4, 5) ~ "Secundaria",
+#                                     NIVEL_ED == 6         ~ "Superior",
+#                                     NIVEL_ED == 9         ~ "NS/NR"),
+#         NIVEL_EDUCATIVO = factor(NIVEL_EDUCATIVO, levels = c("Sin Instrucción", "Primaria", "Secundaria", "Superior")),
+#         GRUPO_EDAD = case_when(CH06 >= 14 & CH06 <= 29 ~ "de 14 a 29 años",
+#                                CH06 >= 30 & CH06 <= 64 ~ "de 30 a 64 años"))
 
 # colores = c("#aa165a","#16aa66")
-colores = c("#FE1764", "#00BDD6")
+# colores = c("#FE1764", "#00BDD6")
 
 # Ocupades
-tabla8 <- base_individual %>% 
-  filter(CALIFICACION != "0",
-         ESTADO == 1) %>% 
-  group_by(Sexo, CALIFICACION) %>% 
-  summarise(IOP_mensual  = round(weighted.mean(P21, PONDIIO), 2)) 
+#tabla8 <- base_individual %>% 
+#  filter(CALIFICACION != "0",
+#         ESTADO == 1) %>% 
+#  group_by(Sexo, CALIFICACION) %>% 
+#  summarise(IOP_mensual  = round(weighted.mean(P21, PONDIIO), 2)) 
 
 
-tabla8_graf <- tabla8 %>% 
-  pivot_wider(., names_from = Sexo, values_from = IOP_mensual) %>% 
-  mutate(brecha = percent((Varones-Mujeres)/Varones, 1),
-         x = (Varones+Mujeres)/2)
+#tabla8_graf <- tabla8 %>% 
+#  pivot_wider(., names_from = Sexo, values_from = IOP_mensual) %>% 
+#  mutate(brecha = percent((Varones-Mujeres)/Varones, 1),
+#         x = (Varones+Mujeres)/2)
 
-tabla8_graf
+#tabla8_graf
 
-library(ggalt)
+#library(ggalt)
 
-ggplot(tabla8_graf, 
-       aes(x = Mujeres, xend = Varones, y = CALIFICACION, 
-           group = CALIFICACION, label = brecha)) +
-  geom_dumbbell(color = "#808080",
-                size_x = 3, size_xend = 3,
-                colour_x = colores[1],
-                colour_xend = colores[2]) +
-  geom_text(data = tabla8_graf, 
-            aes(x, CALIFICACION, label = brecha), nudge_y = .2) +
-  labs(title = "Brecha de ingresos de la ocupación principal
-       por sexo y calificación ocupacional",
-       x = "Ingreso Mensual",
-       y = NULL, 
-       caption = fuente) +
-  scale_color_manual(values = colores) +
-  theme_minimal()
+#ggplot(tabla8_graf, 
+#       aes(x = Mujeres, xend = Varones, y = CALIFICACION, 
+#           group = CALIFICACION, label = brecha)) +
+#  geom_dumbbell(color = "#808080",
+#                size_x = 3, size_xend = 3,
+#                colour_x = colores[1],
+#                colour_xend = colores[2]) +
+#  geom_text(data = tabla8_graf, 
+#            aes(x, CALIFICACION, label = brecha), nudge_y = .2) +
+#  labs(title = "Brecha de ingresos de la ocupación principal
+#       por sexo y calificación ocupacional",
+#       x = "Ingreso Mensual",
+#       y = NULL, 
+#       caption = fuente) +
+#  scale_color_manual(values = colores) +
+#  theme_minimal()
  
 
 # Brecha salarial posta ------------------------------------
@@ -712,14 +702,12 @@ liderazgo %>%
 
 brecha <- liderazgo %>% 
   filter(genero %in% c("Femenino", "Masculino"), 
-         puesto %in% c("Director", "Gerente", "Jefe", "HRBP","Responsable", "Analista", "Administrativo")) %>% 
+         puesto %in% c("Director", "Gerente","Jefe", "HRBP","Responsable", "Analista", "Administrativo")) %>% 
   mutate(puesto = factor(puesto, levels = c("Administrativo","Analista", 
-                                            "HRBP", "Jefe", "Responsable","Gerente","Director" ))) %>% 
+                                            "HRBP", "Responsable","Jefe", "Gerente","Director" ))) %>% 
   select(-pais) %>% 
   group_by(genero, puesto) %>% 
   summarise(media_salarial = mean(sueldo_bruto))
-
-
 
 brecha_graf <- brecha %>% 
   pivot_wider(., names_from = genero, values_from = media_salarial) %>% 
@@ -749,71 +737,183 @@ ggplot(brecha_graf,
         text = element_text(family = "Roboto"))
 
 
-# Satisfacción -------------------------
+## Salarios 
 
-satisf <- kiwi %>% 
-  filter(!is.na(`¿Qué tan satisfecho estás con tu empresa?`),
-         `País en el que trabajas` == "Argentina") %>% 
-  select(Género, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`, `¿Qué tan satisfecho estás con tu empresa?`)
+#¿Cómo es un salario típico en cada región?
+#Esto, a nivel comparativo, a groso modo y sin contemplar otras variables.
+#1- Segun Pais: (No se como hacer la conversion)
 
-names(satisf) <- c("genero", "sueldo", "satisfaccion")
+#aca usar sueldos en dolares
 
-satisf <- satisf %>% 
-  mutate(sueldo = as.numeric(unlist(sueldo))) %>% 
-  filter(sueldo > 30000)
+#2- En Argentina, por región
 
-profiling_num(satisf)
+#cree una tabla con las provincias por region (verificar geografia)
 
-p25 <- profiling_num(satisf)[1,7]
-p50 <- profiling_num(satisf)[1,8]
-p75 <- profiling_num(satisf)[1,9]
+region_Arg <- sheets_read("1DBw_nAkIggFvuce-_S20BuNW8ir3Wv1i3hdF44fPWrU")
 
-satisf <- satisf %>% 
-  mutate(cuartil = case_when(
-    sueldo  <   p25  ~ "1Q",
-    sueldo %in% p25:p50 ~ "2Q",
-    sueldo %in% p50:p75 ~ "3Q",
-    TRUE ~ "4Q"),
-    satisfaccion = factor(satisfaccion, 
-                          levels = c(1,2,3,4,5)), 
-    cuenta = 1)
+region_Arg
 
-library(networkD3)
+region_Arg <- region_Arg %>% 
+  rename(provincias = `nombre`) %>% 
+  filter(!is.na(provincias))
 
+regiones_arg2 <- kiwi %>% 
+  filter(`País en el que trabajas` == "Argentina") %>% 
+  mutate(cuenta = 1) %>% 
+  group_by(`Provincia donde trabajas`) %>% 
+  rename(provincias = `Provincia donde trabajas`) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
 
-satisf <- satisf %>% 
-  group_by(satisfaccion, cuartil) %>% 
-  summarise(value = sum(cuenta))
-
-nodes <- data.frame(name=c(as.character(satisf$satisfaccion),
-                           as.character(satisf$cuartil)) %>% 
-                      unique())
-
-satisf$IDsource <- match(satisf$satisfaccion, nodes$name) - 1
-satisf$IDtarget <-match(satisf$cuartil, nodes$name) - 1
+regiones_arg3 <-regiones_arg2 %>% 
+  left_join(regiones_arg2, by="provincias") %>% 
 
 
-sankeyNetwork(Links = satisf,
-              Nodes = nodes,
-              Value = "value",
-              NodeID = "name",
-              sinksRight=TRUE, nodeWidth=40, fontSize=13, nodePadding=20)
+#ver como usar el left_join()para regiones, porque me trabe
+#de  aca: una vez filtrado por region, sacar la mediana por provincia y hacer 
+  #un grafico de barras horizontal
+  
+#3 Ajustes:
 
+#Una vez filtrado por region, sacar los ajustes anuales,  y hacer un grafico de barras horizontal
 
-puestos <- kiwi %>%
-  filter(!is.na(`¿En qué puesto trabajás?`)) %>% 
-  select(pais = `País en el que trabajas`, 
-         rol = `¿Cuál es tu función principal en RRHH?`,
-         puesto = `¿En qué puesto trabajás?`,
-         sueldo =`¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`) %>% 
+#4-Edad Vs Salarios
+
+Edad <- kiwi %>%
+    select("Tipo de contratación","Trabajo",Género, Edad,`¿En qué puesto trabajás?`, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
+
+names(Edad) <- c("Jornada","Trabajo","genero","edad","puesto","sueldo")
+
+head(Edad)
+
+Edad <- Edad %>% 
+  filter(!is.na(puesto)) %>%
+  filter(edad>18) %>% 
+  filter(Jornada=="Full time") %>% 
+  filter(Trabajo=="Relación de Dependencia")%>% 
   mutate(sueldo = as.numeric(unlist(sueldo)),
-         cuenta = 1)
+         cuenta = 1) 
 
+head(Edad)
 
-
-puestos %>% 
-  filter(pais == "Argentina") %>% 
-  group_by(rol, puesto) %>% 
-  summarise(promedio = mean(sueldo),
-            cant = sum(cuenta)) %>% 
+Edad %>% group_by(edad, genero) %>% 
+  summarise(sueldo_prom = mean(sueldo), 
+            cuenta = sum(cuenta)) %>% 
   print(n = nrow(.))
+
+
+Edad2 <- Edad %>%
+  mutate(sueldo = as.numeric(unlist(sueldo))) %>% 
+    mutate(Rangos_Edad = case_when(
+    edad %in% 18:30 ~ "Hasta 30",
+    edad %in% 31:40 ~ "Entre 31 y 40",
+    edad %in% 41:50 ~ "Entre 41 y 50",
+    edad > 50 ~ "Más de 50"),
+    Rangos_Edad = factor(Rangos_Edad, 
+                         levels = c("Hasta 30", "Entre 31 y 40","Entre 41 y 50", "Más de 50"))) 
+  
+
+Edad3<- Edad2 %>%
+  select(Rangos_Edad, sueldo) %>%
+  filter(sueldo>1) %>% 
+  group_by(Rangos_Edad) %>% 
+  summarise(Sueldo_Promedio = mean(sueldo)) # ver si estan bien los promedios
+
+#tabla
+
+gt(Edad3) %>% 
+  tab_header(title = "Sueldos Promedio por Rango de Edad")
+
+#Grafico 
+
+Edad3 %>% 
+  ggplot(aes(x = reorder(Rangos_Edad, Sueldo_Promedio), y = Sueldo_Promedio)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Sueldo promedio por área",
+       subtitle = "En pesos argentinos",
+       x= "", y = "", fill = "Género",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")+
+  theme_minimal() +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
+
+#4- Salarios segun puestos 
+
+puestos<-kiwi %>% 
+  select("Tipo de contratación","Trabajo","País en el que trabajas",Género, Edad,`¿En qué puesto trabajás?`, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
+
+names(puestos) <- c("Jornada","Trabajo","pais","genero","edad","puesto","sueldo")
+
+puestos
+
+#rta por puesto 
+
+puestos1 <- puestos %>% 
+  filter(pais=="Argentina") %>% 
+  filter(!is.na(puesto)) %>% 
+  mutate(cuenta = 1) %>% 
+  group_by(`puesto`) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta) %>% 
+  print(n = nrow(.))
+
+puestos1
+
+#tabla por puestos
+
+gt(puestos1) %>% 
+  tab_header(title = "Cantidad por puestos",
+             subtitle ="En Argentina")
+
+#Promedio por puestos 
+
+
+puestos2<- puestos %>%
+  select(puesto,pais,sueldo) %>%
+  filter(pais=="Argentina") %>% 
+  filter(!is.na(puesto)) %>%
+  filter(sueldo>1000) %>% 
+  group_by(puesto) %>%
+  mutate(sueldo = as.numeric(unlist(sueldo)),
+         cuenta = 1) %>% 
+  summarise(Sueldo_Promedio = mean(sueldo)) %>% 
+  print(n = nrow(.))
+
+#tabla
+
+gt(puestos2) %>% 
+  tab_header(title = "Sueldos Promedio por puestos",
+             subtitle ="En Argentina")
+
+#filtramos mas los puestos:
+
+puestos 
+
+puestos3<- puestos %>%
+  select(puesto,pais,sueldo) %>%
+  filter(`pais`=="Argentina") %>% 
+  filter(!is.na(puesto)) %>%
+  filter(sueldo>1000) %>% 
+  mutate(cuenta = 1) %>%
+  group_by(puesto) %>%
+  mutate(sueldo = as.numeric(unlist(sueldo)),
+         cuenta = 1) %>% 
+  summarise(Sueldo_Promedio = mean(sueldo)) %>% 
+  arrange(-Sueldo_Promedio) %>% 
+  print(n = nrow(.))
+
+view(puest)
+
+
+puestos3
+
+gt(puestos3) %>% 
+  tab_header(title = "Sueldos Promedio por puestos")
+
+#agrupar los casos unicos en una categoria, que sea otros. 
+
+#5- salarios segun puesto/ experiencia
+#Sacar el promedio y la mediana
+
+#6- salarios segun puesto/rubro
+#Tomar, solo los rubros mayores, y el resto en otros. 
