@@ -20,11 +20,12 @@ options(scipen = 999)   # Modifica la visualización de los ejes numérico a val
 
 loadfonts(quiet = TRUE) # Permite cargar en R otros tipos de fuentes.
 
-# Estilo limpio sin líneas de fondo
+# Estilo de los gráficos
 estilo <- theme(panel.grid = element_blank(),
                 plot.background = element_rect(fill = "#FBFCFC"),
                 panel.background = element_blank(),
                 text = element_text(family = "Roboto"))
+
 
 # Estilo limpio con líneas de referencia verticales en gris claro
 estilov <- theme(panel.grid = element_blank(),
@@ -32,7 +33,7 @@ estilov <- theme(panel.grid = element_blank(),
                  panel.background = element_blank(),
                  axis.line.x = element_line(color = "#AEB6BF"),
                  text = element_text(family = "Roboto")) 
-  
+
 
 # Estilo limpio con líneas de referencia horizontales en gris claro
 estiloh <- theme(panel.grid = element_blank(),
@@ -46,6 +47,8 @@ genero <- c("#8624F5", "#1FC3AA", "#FFD129", "#75838F") #Violeta - Verde - Amari
 colores <-  c("#8624F5", "#1FC3AA")
 
 azul <- "#344D7E"
+verde <-  "#009204"
+gris <- "#75838F"
 
 # Creo un objeto con un texto que se va a repetir mucho a lo largo del análisis
 fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
@@ -267,6 +270,15 @@ rh$ajuste_porcentaje[[648]] <- 44.5
 
 rh <- unnest(data = rh, cols = c(anios_en_empresa, anios_en_puesto, anios_experiencia,
                                  ajuste_porcentaje, contactos_linkedin), keep_empty = TRUE)
+
+# Corregir orden de puestos y simplificar género
+
+rh <- rh %>% 
+  mutate(puesto = factor(puesto, levels = c("Director", "Gerente", "Jefe", "Responsable",
+                                            "HRBP", "Analista", "Administrativo", "Pasante")),
+         genero = fct_recode(genero, "Género Diverso" = "Género diverso (género diverso / género fluido /otras minorías)"))
+
+
 
 # Análisis exploratorio ----------------------------------
 
@@ -817,7 +829,40 @@ puestos %>%
             cant = sum(cuenta)) %>% 
   print(n = nrow(.))
 
-# Educación (Daniela)
+# Educación (Daniela) ---------------------------
+
+educ <- rh %>% 
+  select(tipo_universidad) %>%  
+  group_by(tipo_universidad) %>% 
+  summarise (n = n()) %>% 
+  mutate(freq = n/sum(n)) %>% 
+  arrange(-n)
+
+# Compute the cumulative percentages (top of each rectangle)
+educ$ymax <- cumsum(educ$freq)
+
+# Compute the bottom of each rectangle
+educ$ymin <- c(0, head(educ$ymax, n=-1))
+
+# Compute label position
+educ$labelPosition <- (educ$ymax + educ$ymin) / 2
+
+# Compute a good label
+educ$label <- paste0(educ$tipo_universidad, "\n Cant: ", educ$n)
+
+# Make the plot
+ggplot(educ, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=genero)) +
+  geom_rect() +
+  coord_polar(theta="y") + # Try to remove that to understand how the chart is built initially
+  xlim(c(2, 4)) +# Try to remove that to see how to make a pie chart
+  scale_fill_manual(values = c(azul, verde, gris)) +
+  theme_void() +
+  theme(legend.position = "right",
+        panel.background = element_blank(),
+        text = element_text(family = "Roboto")) +
+  labs(title = "Cantidad de respuestas según género",
+       fill = "Tipo de Universidad", 
+       caption = fuente)
 
 recorte_educacion <- rh %>%
   select(nivel_formacion, carrera_grado,
@@ -828,7 +873,10 @@ recorte_educacion <- rh %>%
 ggplot(recorte_educacion, (aes(x = puesto, fill = tipo_universidad))) + #Tipo de universidad y cargo
   geom_bar() +
   theme(axis.text.x = element_text(angle = 90)) + 
-  labs(x="",y="")
+  labs(x="",y="") +
+    estiloh +
+  scale_fill_manual(values = c(gris, verde, azul)) +
+  coord_flip()
 
 #Composicion del area segun tipo de universidad
 
@@ -838,48 +886,59 @@ recorte_area <- recorte_educacion %>%
 
 
 ggplot(recorte_area, aes(x = tipo_universidad)) + #Tipo de universidad y cargo
-  geom_bar() +
+  geom_bar(fill = azul) +
   theme(axis.text.x = element_text(angle = 90)) + 
-  labs(x="",y="") 
+  labs(x="",y="") + estilo
 
 
 #Composición del área según carrera
 
-library(forcats)
 
 recorte_educacion$carrera_grado <- as.factor(recorte_educacion$carrera_grado) 
 summary(recorte_educacion$carrera_grado) 
 levels(recorte_educacion$carrera_grado) 
+
+rh %>% 
+  select(carrera_grado) %>% 
+  group_by(carrera_grado) %>% 
+  count() %>% 
+  print(n = nrow(.))
 
 ggplot(recorte_educacion, aes(x = carrera_grado, fill = tipo_universidad)) + #HORROR
   geom_bar() +
   theme(axis.text.x = element_text(angle = 90)) + 
   labs(x="",y="") 
 
-rh <- rh %>% 
-  filter(puesto != "Juzgado Civil y Comercial",
-         puesto != "Programador",
-         puesto != "Cuidado") %>% 
-  mutate(puesto = str_trim(puesto, side = "both"), # Elimina espacios vacíos
-         puesto = fct_collapse_recode(puesto, "Gerente" = "Superintendente"),
-         puesto = fct_collapse(puesto, "HRBP" = c("Asesor", "Asesoramiento", 
-                                                  "Senior Consultoría", "specialist"),
-                               "Administrativo" = c("Asistente","Aux", "Asistente RRHH"))) 
 
 
 recorte_educacion <- recorte_educacion %>%
-  mutate(carrera_grado = fct_collapse(carrera_grado, "Abogacía" = c("Abogacía, Escribanía, Lic en RRHH", "Abogacía"),
-                        "Administración de Empresas" = c ("Administración de Empresas", "Lic en Administracion"),
-                        "Contador Público" = c ("Contador Público", "Economia", "Economía"),
-                        "RRHH / RRLL / RRTT" = c ("Estudié en la Universidad Analista en Recursos Humanos", "RRHH&Coaching ontologico profesional."),
-                        "Ingenieria industrial" = c ("Ing en sistemas", "Ingeniería Comercial", "Ingenieria Electrónica","Ingeniería Industrial"),
-                        "Psicología" = c ("Psicologia","Psicología Industrial", "Psicología social","Psicología Social / Lic. en Dirección de las Organizaciones")))
+  mutate(carrera_grado = fct_collapse(carrera_grado, "Abogacía" = c("Abogacía, Escribanía, Lic en RRHH")),
+         carrera_grado = fct_collapse(carrera_grado, "Administración de Empresas" = c("Lic en Administracion", "Administración y sistemas",
+                                                                                      "Lic Administracion - Contador Publico - Abogado en curso")),
+         carrera_grado = fct_collapse(carrera_grado, "Contador Público" = c("Economia", "Economía", 
+                                                                            "Contador Público/Lic. En Letras",
+                                                                            "Economia y RR.HH")),
+         carrera_grado = fct_collapse(carrera_grado, "Comunicación Social" = c("Caomunicacion social me especialice en RRHH",
+                                                                               "Comunicación","Comunicación social",
+                                                                               "Lic. en Ciencias de la Comunicación")),
+         carrera_grado = fct_collapse(carrera_grado, "RRHH/ RRLL / RRTT" = c("Estudié en la Universidad Analista en Recursos Humanos", 
+                                                  "RRHH&Coaching ontologico profesional.",
+                                                  "Graduada en lic rrhh y abogacia")),
+         carrera_grado = fct_collapse(carrera_grado, "Ingenierías" = c("Ing en sistemas", "Ing. Financiera", 
+                                                                       "Ingeniería Comercial", "ING.sistemas",
+                                                                      "Ingenieria Electrónica","Ingeniería Industrial")),
+         carrera_grado = fct_collapse(carrera_grado, "Psicología" = c("Psicologia","Psicología Industrial", 
+                                                                      "Psicología social",
+                                                                      "Psicología Social / Lic. en Dirección de las Organizaciones")),
+         carrera_grado = fct_collapse(carrera_grado, "No estudié en la Universidad" = "Ninguna"),
+         carrera_grado = fct_lump(carrera_grado, 
+                                  prop = 0.02, 
+                                  other_level = "Otros"))
 
-"Otros" = c ("Actuario", "Administración y sistemas", "Antropologia", "Ciencias de la educacion", 
-             "Ciencias Políticas", "Contador Público/Lic. En LetrasContador Público/Lic. En Letras", "Economia y RR.HH",
-             "Graduada en lic rrhh y abogacia", "Lic Administracion - Contador Publico - Abogado en curso",
-             "Lic educacion", "Lic en Turismo", "Lic. En nutricion", "Lic. En nutricion", "Literatura","sistemas", "Sistemas_información", "Comunicación_social" = c ("Caomunicacion social me especialice en RRHH", "Comunicación", "Comunicación social", "Comunicación Social", "Lic. en Ciencias de la Comunicación",                                                                                                                                          "Licenciatura en Comunicación Social", "Licenciatura en Comunicación Social")
-             "Relaciones internacionales", "Relaciones Internacionales", "Traductorado de ingles", "Analista de Sistemas", "Licenciatura en Sistemas", "Marketing", "Lic. RRPP", "Relaciones Públicas","Rrpp")
+ggplot(recorte_educacion, aes(x = carrera_grado, fill = tipo_universidad)) + #HORROR
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90)) + 
+  labs(x="",y="") 
 
 #Relacion nivel de estudios/ cargo que ocupa
 
@@ -888,21 +947,6 @@ ggplot(recorte_educacion, (aes(x = nivel_formacion, fill = puesto))) + #Tipo de 
   theme(axis.text.x = element_text(angle = 90)) + 
   labs(x="",y="")
 
-fct_collapse_collapse(recorte_educacion$puesto, 
-             Administrativo = c ("Administrativo"),
-             HRBP = c ("HRBP"),
-             Analista = c ("Analista","Capacitador","Reclutadora", "Recruiter"),
-             Consultor = c ("Consultor", "Consultor Ejecutivo", "consultor jr"),
-             Supervisor = c ("Coordinación", "Coordinador de Payroll", "Supervisor" ),
-             Director = c ("Director", "Director ( escalafón municipal)"),
-             Encargado =c ("Encargado","Responsable"), #Hay que ver
-             Especialista = c ("especialista", "Especialista en selección IT"),
-             Generalista = c ("Generalista"),
-             Gerente = c ("Gerente"),
-             Jefe = c ("Jefe de Proyecto"),
-             Pasante = C ("Pasante")
-
-levels(recorte_educacion$puesto)
 
 
 #Nivel estudios/ remuneracion
@@ -921,11 +965,26 @@ ne_salario %>% #Problemas con la moneda
 
 ne_salario %>% 
   select(pais, nivel_formacion, genero, puesto) %>%
-  filter(pais == "Argentina"| puesto == "Director"| puesto == "Gerente" | puesto == "HRBP") %>%
+  filter(pais == "Argentina"| puesto == "Director"| puesto == "Gerente" | puesto == "HRBP",
+         genero != "Género Diverso") %>%
+  group_by(nivel_formacion) %>% 
+  ggplot(aes (x= nivel_formacion, fill = genero)) + 
+  geom_bar(position = "fill") +
+  theme(axis.text.x = element_text(angle = 90)) + 
+  labs(x="",y="") +
+  scale_fill_manual(values = colores) +
+  coord_flip()
+
+ne_salario %>% 
+  select(pais, nivel_formacion, genero, puesto) %>%
+  filter(pais == "Argentina"| puesto == "Director"| puesto == "Gerente" | puesto == "HRBP",
+         genero != "Género Diverso") %>%
   group_by(nivel_formacion) %>% 
   ggplot(aes (x= nivel_formacion, fill = genero)) + 
   geom_bar() +
   theme(axis.text.x = element_text(angle = 90)) + 
-  labs(x="",y="")
+  labs(x="",y="") +
+  scale_fill_manual(values = colores) +
+  facet_wrap(~genero, nrow = 2)
 
 # 
