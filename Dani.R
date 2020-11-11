@@ -20,26 +20,24 @@ options(scipen = 999)   # Modifica la visualización de los ejes numérico a val
 
 loadfonts(quiet = TRUE) # Permite cargar en R otros tipos de fuentes.
 
-# Estilo de los gráficos
+# Estilo limpio sin líneas de fondo
 estilo <- theme(panel.grid = element_blank(),
                 plot.background = element_rect(fill = "#FBFCFC"),
                 panel.background = element_blank(),
                 text = element_text(family = "Roboto"))
 
-
 # Estilo limpio con líneas de referencia verticales en gris claro
 estilov <- theme(panel.grid = element_blank(),
                  plot.background = element_rect(fill = "#FBFCFC"),
                  panel.background = element_blank(),
-                 axis.line.x = element_line(color = "#AEB6BF"),
-                 text = element_text(family = "Roboto")) 
-
+                 panel.grid.major.x = element_line(color = "#AEB6BF"),
+                 text = element_text(family = "Roboto"))
 
 # Estilo limpio con líneas de referencia horizontales en gris claro
 estiloh <- theme(panel.grid = element_blank(),
                  plot.background = element_rect(fill = "#FBFCFC"),
                  panel.background = element_blank(),
-                 axis.line.y = element_line(color = "#AEB6BF"),
+                 panel.grid.major.y = element_line(color = "#AEB6BF"),
                  text = element_text(family = "Roboto"))
 
 genero <- c("#8624F5", "#1FC3AA", "#FFD129", "#75838F") #Violeta - Verde - Amarillo - Gris
@@ -531,18 +529,14 @@ rubro %>%
 
 
 # Representación de género en la encuesta
-kiwi %>% 
-  select(Género) %>% 
-  group_by(Género) %>% 
+rh %>% 
+  select(genero) %>% 
+  group_by(genero) %>% 
   summarise (n = n()) %>% 
   mutate(freq = n/sum(n)) 
 
-diversidad <- kiwi %>% 
-  filter(Trabajo !="Freelance") %>% 
-  mutate(genero = fct_collapse_recode(Género, 
-                               "No binario"= c("Género diverso (género diverso / género fluido /otras minorías)")))
 
-div <- diversidad %>% 
+div <- kiwi %>% 
 select(genero) %>% 
   mutate(genero = factor(genero, 
                          levels = c("Femenino", "Masculino", 
@@ -595,29 +589,20 @@ gt(div %>% select(genero, n, freq)) %>%
 
 div
 
-kiwi %>% 
-  filter(Trabajo != "Freelance") %>% 
-  select(Género) %>% 
-  group_by(Género) %>% 
+rh %>% 
+  select(genero) %>% 
+  group_by(genero) %>% 
   summarise (n = n()) %>% 
   mutate(freq = n/sum(n)) 
 
-lideres <- diversidad %>% 
- select(genero = `Género`,
-         puesto = `¿En qué puesto trabajás?`,
-         equipo = `¿Cuántas personas tenés a cargo? (poné 0 si no tenés gente a cargo?`) %>% 
-  filter(puesto != "Juzgado Civil y Comercial", puesto != "Pasante", 
-         puesto != "Programador", puesto != "Jefe de Proyecto") %>% 
-  mutate(genero = fct_collapse_recode(genero,
-                             "No binario" = "Género diverso (género diverso / género fluido /otras minorías)"))
 
 
 # Propoción de líderes hombres y mujeres
-lideres_genero <- lideres %>% 
+lideres_genero <- rh %>% 
   filter(genero %in% c("Masculino","Femenino")) %>% 
   group_by(genero) %>%
   mutate(gente_a_cargo = if_else(puesto %in% c("Responsable", "Jefe", "Gerente", 
-                                               "Supervisor", "Director"),1,0)) %>%
+                                               "Director"),1,0)) %>%
   summarise(lider = sum(gente_a_cargo)) %>% 
   left_join(div) %>% 
   select(genero, lider, n) %>% 
@@ -664,6 +649,7 @@ prop_mujer_lid <- pull(lideres_genero[1,2]/lideres_genero[1,3])
 # H1 = La proporción de hombres líderes es mayor que la proporción de mujeres líderes.
 resultados_test <- broom::tidy(t.test(test_lider$cat, mu = prop_mujer_lid, alternative = "greater"))
 
+resultados_test
 
 valor_test <- if(resultados_test[1,3] > 0.05) {
   print("la diferencia es estadísticamente significativa")
@@ -674,42 +660,36 @@ valor_test <- if(resultados_test[1,3] > 0.05) {
 
 # Nombres de RRHH --------------------------------------------------------
 
-nombres <- kiwi[ , 32]
-
-nombres <- nombres %>% 
-  rename(nombre = `¿Cómo se llama el área en tu empresa?`) %>% 
-  filter(!is.na(nombre))
+nombres <- rh[,"nombre_area"]
 
 nombres %>% 
-  group_by(nombre) %>% 
+  group_by(nombre_area) %>% 
   count(sort = T) %>% 
   print(n = nrow(.))
 
 distintos <- distinct(.data = nombres) %>% count() %>% pull()
 
 nombres <- nombres %>% 
-  mutate(nombre = str_to_title(nombre, locale = "es")) %>% 
-  group_by(nombre) %>% 
+  mutate(nombre_area = str_to_title(nombre_area, locale = "es")) %>% 
+  filter(!is.na(nombre_area)) %>% 
+  group_by(nombre_area) %>% 
   count(sort = T, name = "rtas") %>% 
-  head(10) %>% 
-  ungroup()
+  head(10) 
 
-nombres
-
-ggplot(nombres, aes(x = rtas, y = reorder(nombre,rtas))) +
+ggplot(nombres, aes(x = rtas, y = reorder(nombre_area,rtas))) +
   geom_col(fill = "#344D7E") +
-  estilo +
+  estilov +
   labs(title = "Top 10 de nombres para el área de RRHH", 
        x = "", y = "", caption = fuente)
 
 gt(nombres) %>% 
-  cols_label(nombre = "Nombre del Área",
+  cols_label(nombre_area = "Nombre del Área",
              rtas = "Respuestas") %>% 
   tab_style(style = list(
     cell_fill = "#F8FF00"),
     locations = cells_body(
-      columns = vars(nombre),
-      rows = nombre == "Oficina De Personal"
+      columns = vars(nombre_area),
+      rows = nombre_area == "Oficina De Personal"
     ))
 
 
@@ -722,7 +702,8 @@ liderazgo %>%
   arrange(-total)
 
 brecha <- liderazgo %>% 
-  filter(genero %in% c("Femenino", "Masculino"), 
+  filter(pais == "Argentina",
+         genero %in% c("Femenino", "Masculino"), 
          puesto %in% c("Director", "Gerente", "Jefe", "HRBP","Responsable", "Analista", "Administrativo")) %>% 
   mutate(puesto = factor(puesto, levels = c("Administrativo","Analista", 
                                             "HRBP", "Jefe", "Responsable","Gerente","Director" ))) %>% 
@@ -762,15 +743,13 @@ ggplot(brecha_graf,
 
 # Satisfacción -------------------------
 
-satisf <- kiwi %>% 
-  filter(!is.na(`¿Qué tan satisfecho estás con tu empresa?`),
-         `País en el que trabajas` == "Argentina") %>% 
-  select(Género, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`, `¿Qué tan satisfecho estás con tu empresa?`)
+satisf <- rh %>% 
+  filter(!is.na(satisfaccion),
+         pais == "Argentina") %>% 
+  select(genero, sueldo_bruto, satisfaccion)
 
-names(satisf) <- c("genero", "sueldo", "satisfaccion")
 
 satisf <- satisf %>% 
-  mutate(sueldo = as.numeric(unlist(sueldo))) %>% 
   filter(sueldo > 30000)
 
 profiling_num(satisf)
@@ -781,16 +760,17 @@ p75 <- profiling_num(satisf)[1,9]
 
 satisf <- satisf %>% 
   mutate(cuartil = case_when(
-    sueldo  <   p25  ~ "1Q",
-    sueldo %in% p25:p50 ~ "2Q",
-    sueldo %in% p50:p75 ~ "3Q",
+    sueldo_bruto  <   p25  ~ "1Q",
+    sueldo_bruto %in% p25:p50 ~ "2Q",
+    sueldo_bruto %in% p50:p75 ~ "3Q",
     TRUE ~ "4Q"),
     satisfaccion = factor(satisfaccion, 
                           levels = c(1,2,3,4,5)), 
     cuenta = 1)
 
-library(networkD3)
+satisf
 
+library(networkD3)
 
 satisf <- satisf %>% 
   group_by(satisfaccion, cuartil) %>% 
@@ -811,22 +791,10 @@ sankeyNetwork(Links = satisf,
               sinksRight=TRUE, nodeWidth=40, fontSize=13, nodePadding=20)
 
 
-puestos <- kiwi %>%
-  filter(!is.na(`¿En qué puesto trabajás?`)) %>% 
-  select(pais = `País en el que trabajas`, 
-         rol = `¿Cuál es tu función principal en RRHH?`,
-         puesto = `¿En qué puesto trabajás?`,
-         sueldo =`¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`) %>% 
-  mutate(sueldo = as.numeric(unlist(sueldo)),
-         cuenta = 1)
-
-
-
-puestos %>% 
+rh %>% 
   filter(pais == "Argentina") %>% 
-  group_by(rol, puesto) %>% 
-  summarise(promedio = mean(sueldo),
-            cant = sum(cuenta)) %>% 
+  group_by(funcion_rh, puesto) %>% 
+  summarise(promedio = mean(sueldo_bruto)) %>% 
   print(n = nrow(.))
 
 # Educación (Daniela) ---------------------------
@@ -851,16 +819,16 @@ educ$labelPosition <- (educ$ymax + educ$ymin) / 2
 educ$label <- paste0(educ$tipo_universidad, "\n Cant: ", educ$n)
 
 # Make the plot
-ggplot(educ, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=genero)) +
+ggplot(educ, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=tipo_universidad)) +
   geom_rect() +
   coord_polar(theta="y") + # Try to remove that to understand how the chart is built initially
   xlim(c(2, 4)) +# Try to remove that to see how to make a pie chart
-  scale_fill_manual(values = c(azul, verde, gris)) +
+  scale_fill_manual(values = c(gris, verde, azul)) +
   theme_void() +
   theme(legend.position = "right",
         panel.background = element_blank(),
         text = element_text(family = "Roboto")) +
-  labs(title = "Cantidad de respuestas según género",
+  labs(title = "Tipo de Universidad",
        fill = "Tipo de Universidad", 
        caption = fuente)
 
@@ -871,10 +839,10 @@ recorte_educacion <- rh %>%
 #Relacion tipo de universidad vs cargo que ocupa
 
 ggplot(recorte_educacion, (aes(x = puesto, fill = tipo_universidad))) + #Tipo de universidad y cargo
-  geom_bar() +
+  geom_bar(position = "dodge") +
   theme(axis.text.x = element_text(angle = 90)) + 
   labs(x="",y="") +
-    estiloh +
+    estilov +
   scale_fill_manual(values = c(gris, verde, azul)) +
   coord_flip()
 
@@ -936,9 +904,11 @@ recorte_educacion <- recorte_educacion %>%
                                   other_level = "Otros"))
 
 ggplot(recorte_educacion, aes(x = carrera_grado, fill = tipo_universidad)) + #HORROR
-  geom_bar() +
+  geom_bar(position = "dodge") +
   theme(axis.text.x = element_text(angle = 90)) + 
-  labs(x="",y="") 
+  labs(x="",y="") +
+  estiloh +
+  scale_fill_manual(values = c(gris, verde, azul))
 
 #Relacion nivel de estudios/ cargo que ocupa
 
@@ -946,7 +916,7 @@ ggplot(recorte_educacion, (aes(x = nivel_formacion, fill = puesto))) + #Tipo de 
   geom_bar() +
   theme(axis.text.x = element_text(angle = 90)) + 
   labs(x="",y="")
-
+# Este gráfico hay que mejorarlo
 
 
 #Nivel estudios/ remuneracion
@@ -987,4 +957,4 @@ ne_salario %>%
   scale_fill_manual(values = colores) +
   facet_wrap(~genero, nrow = 2)
 
-# 
+ 
