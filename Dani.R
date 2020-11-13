@@ -134,7 +134,16 @@ freelo <- kiwi %>%
 
 # Base de empleados en relación de dependencia
 rh <- kiwi %>% 
-  filter(trabajo == "Relación de Dependencia") %>% 
+  filter(trabajo == "Relación de Dependencia", 
+         funcion_rh != "Ninguno",
+         funcion_rh != "No me desempeño en el área de RRHH.",
+         funcion_rh != "Trabajo en el área de Sistemas.",
+         funcion_rh != "No trabajo en el area",
+         funcion_rh != "No trabajo en recursos humanos",
+         funcion_rh != "No trabajo en Rrhh",
+         funcion_rh != "Trabajo en Administración y Finanzas",
+         funcion_rh != "Aaa",
+         funcion_rh != "IT") %>% 
   mutate(sueldo_bruto = as.numeric(unlist(sueldo_bruto)),
          puesto = factor(puesto))
 
@@ -174,6 +183,7 @@ rh <- rh %>%
                                                       "Reclutadora", "Selectora", "Senior"))) %>% 
   select(Marca.temporal:valoracion_gestion_empresa)
 
+
 # Cuento la cantidad de puestos diferentes luego de la limpieza.
 rh %>% 
   select(puesto) %>% 
@@ -181,102 +191,58 @@ rh %>%
   count() %>% 
   pull()
 
+# Pasa los campos de lista a numéricos
+rh <- rh %>% 
+  mutate(anios_en_empresa  = as.numeric(unlist(anios_en_empresa)),
+         anios_en_puesto   = as.numeric(unlist(anios_en_puesto)),
+         anios_experiencia = as.numeric(unlist(anios_experiencia)),
+         ajuste_porcentaje = as.numeric(unlist(ajuste_porcentaje)))
+
+
 # En la columna de contactos hay gente que usó el símbolo "+" lo cual impide deshacer la lista
 # Busco manualmente los índices que tienen el símbolo +
 rh$contactos_linkedin
 rh$contactos_linkedin[c(1:400)]
 
+
 # Modifica los registros
-rh$contactos_linkedin[[17]] <- 500
-rh$contactos_linkedin[[25]] <- 1000
-rh$contactos_linkedin[[72]] <- 500
-rh$contactos_linkedin[[85]] <- 1000
-rh$contactos_linkedin[[151]] <- 800
-rh$contactos_linkedin[[217]] <- 500
-rh$contactos_linkedin[[225]] <- 1000
-rh$contactos_linkedin[[272]] <- 500
-rh$contactos_linkedin[[285]] <- 1000
-rh$contactos_linkedin[[342]] <- 1000
-rh$contactos_linkedin[[366]] <- 500
-rh$contactos_linkedin[[386]] <- 30000
-rh$contactos_linkedin[[389]] <- 500
-rh$contactos_linkedin[[403]] <- 5000
-rh$contactos_linkedin[[450]] <- 500
-rh$contactos_linkedin[[464]] <- 500
-rh$contactos_linkedin[[601]] <- 500
-rh$contactos_linkedin[[604]] <- 500
-
-# En las siguientes columnas, Google Sheet no reconoce el punto como símbolo decimal
-# Corrijo manualmente los registros para que sea un valor numérico
-rh$anios_en_empresa[[21]]  <- 1.5
-rh$anios_en_empresa[[53]]  <- 1.5
-rh$anios_en_empresa[[117]] <- 1.5
-rh$anios_en_empresa[[181]] <- 2.5
-rh$anios_en_empresa[[222]] <- 0
-rh$anios_en_empresa[[282]] <- 4.5
-rh$anios_en_empresa[[346]] <-  3.5
-rh$anios_en_empresa[[360]] <- 1.5
-rh$anios_en_empresa[[365]] <- 1.5
-rh$anios_en_empresa[[553]] <- 1.5
-rh$anios_en_empresa[[653]] <- 1.5
-
-
-rh$anios_en_puesto[[21]]  <- 1.5
-rh$anios_en_puesto[[53]]  <- 1.5 
-rh$anios_en_puesto[[117]] <- 1.5
-rh$anios_en_puesto[[161]] <- 2.5
-rh$anios_en_puesto[[181]] <- 2.5
-rh$anios_en_puesto[[346]] <- 2.5
-rh$anios_en_puesto[[360]] <- 1.5
-rh$anios_en_puesto[[365]] <- 1.5
-rh$anios_en_puesto[[553]] <- 1.5
-
-
-rh$anios_experiencia[[117]] <- 1.5
-rh$anios_experiencia[[360]] <- 3.5
-rh$anios_experiencia[[365]] <- 1.5
-rh$anios_experiencia[[402]] <- 0.5
-rh$anios_experiencia[[492]] <- 2.4
-rh$anios_experiencia[[529]] <- 6.5
-rh$anios_experiencia[[653]] <- 4.5
-
-
-rh$ajuste_porcentaje[[61]]  <-  9.5
-rh$ajuste_porcentaje[[62]]  <- 12.69
-rh$ajuste_porcentaje[[90]]  <- 23.7
-rh$ajuste_porcentaje[[119]] <- 7.3
-rh$ajuste_porcentaje[[225]] <- 2.5
-rh$ajuste_porcentaje[[242]] <- 20.7
-rh$ajuste_porcentaje[[262]] <- 15.4
-rh$ajuste_porcentaje[[337]] <- 2.5
-rh$ajuste_porcentaje[[350]] <- 14.52
-rh$ajuste_porcentaje[[433]] <- 12.8
-rh$ajuste_porcentaje[[434]] <- 12.8
-rh$ajuste_porcentaje[[435]] <- 8.11
-rh$ajuste_porcentaje[[449]] <- 13.5
-rh$ajuste_porcentaje[[463]] <- 22.7
-rh$ajuste_porcentaje[[488]] <- 5.5
-rh$ajuste_porcentaje[[513]] <- 30.5
-rh$ajuste_porcentaje[[529]] <- 28.06
-rh$ajuste_porcentaje[[581]] <- 0
-rh$ajuste_porcentaje[[592]] <- 50
-rh$ajuste_porcentaje[[615]] <- 16.2
-rh$ajuste_porcentaje[[630]] <- 0.5
-rh$ajuste_porcentaje[[640]] <- 35.2
-rh$ajuste_porcentaje[[648]] <- 44.5
-
+rh$contactos_linkedin[[150]] <- 800
+rh$contactos_linkedin[[214]] <- 500
+rh$contactos_linkedin[[222]] <- 1000
+rh$contactos_linkedin[[269]] <- 500
+rh$contactos_linkedin[[282]] <- 1000
+rh$contactos_linkedin[[339]] <- 1000
+rh$contactos_linkedin[[382]] <- 30000
+rh$contactos_linkedin[[385]] <- 500
+rh$contactos_linkedin[[398]] <- 5000
+rh$contactos_linkedin[[445]] <- 500
+rh$contactos_linkedin[[459]] <- 500
+rh$contactos_linkedin[[595]] <- 500
+rh$contactos_linkedin[[598]] <- 500
 
 rh <- unnest(data = rh, cols = c(anios_en_empresa, anios_en_puesto, anios_experiencia,
                                  ajuste_porcentaje, contactos_linkedin), keep_empty = TRUE)
 
+glimpse(rh)
+
 # Corregir orden de puestos y simplificar género
 
 rh <- rh %>% 
-  mutate(puesto = factor(puesto, levels = c("Director", "Gerente", "Jefe", "Responsable",
-                                            "HRBP", "Analista", "Administrativo", "Pasante")),
+  mutate(puesto = factor(puesto, levels = c("Pasante", "Administrativo", "Analista",
+                                            "HRBP", "Responsable","Jefe",
+                                            "Gerente", "Director")),
          genero = fct_recode(genero, "Género Diverso" = "Género diverso (género diverso / género fluido /otras minorías)"))
 
+rh %>% 
+  select(nivel_formacion) %>% 
+  group_by(nivel_formacion) %>% count()
 
+rh <- rh %>% 
+  filter(nivel_formacion != "Secundario en curso") %>% 
+  mutate(nivel_formacion = fct_collapse(nivel_formacion, "Universitario completo" = c("Maestría abandonada"),
+                                        "Secundario completo" = c("Terciario abandonado", "Terciario en curso", 
+                                                                  "Universitario abandonado"),
+                                        "Maestría completa" = c("Doctorado en curso")))
 
 # Análisis exploratorio ----------------------------------
 
@@ -428,9 +394,7 @@ tc <- tibble (pais, tipo_cambio) # Creo una tabla con los tipos de cambio de los
 
 sueldos_dolar <- rh %>% 
   select(puesto, sueldo_bruto, pais, tipo_contratacion) %>% 
-  filter(puesto != "Juzgado Civil y Comercial", puesto != "Pasante", 
-         puesto != "Programador", puesto != "Jefe de Proyecto", 
-         tipo_contratacion != "Pasante")
+  filter(tipo_contratacion != "Pasante", puesto != "Pasante")
 
 # Controlar la cantidad de casos de contratos part time
 sueldos_dolar %>% 
@@ -451,8 +415,8 @@ summary(sueldos_dolar)
 
 
 numericos <- profiling_num(sueldos_dolar)
-poda_p05 <- numericos[5,6]
-poda_p95 <- numericos[5,10]
+poda_p05 <- numericos[1,6]
+poda_p95 <- numericos[1,10]
 
 # Dado que los percentiles 5 y 95 están en U$400 y 2689 respectivamente, 
 # podamos todo lo que esté fuera de ese rango
@@ -461,14 +425,10 @@ media_pais <- sueldos_dolar %>%
   filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay", "Perú"),
          between(sueldo_dolar,poda_p05,poda_p95)) %>% 
   group_by(pais) %>% 
-  summarise(sueldop = list(mean_se(sueldo_dolar)),
-            cant = sum(cuenta)) %>% 
-  unnest(cols = c(sueldop)) %>%
-  print(n = nrow(.)) 
+  summarise(sueldop = list(mean_se(sueldo_dolar))) %>% 
+  unnest(cols = c(sueldop)) 
  
-sueldo_dolar_pais <- sueldos_dolar %>% 
-  filter(pais %in% c("Argentina", "Bolivia", "Chile", "Paraguay", "Uruguay", "Perú"),
-         between(sueldo_dolar, 400,3000))
+
   
 # Gráfico
 ggplot(media_pais, aes(x = reorder(pais, -y), y =  y))+
@@ -794,8 +754,11 @@ sankeyNetwork(Links = satisf,
 rh %>% 
   filter(pais == "Argentina") %>% 
   group_by(funcion_rh, puesto) %>% 
-  summarise(promedio = mean(sueldo_bruto)) %>% 
+  summarise(promedio = mean(sueldo_bruto),
+            cuenta = n()) %>% 
   print(n = nrow(.))
+
+
 
 # Educación (Daniela) ---------------------------
 
