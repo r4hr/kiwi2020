@@ -1143,7 +1143,35 @@ gt(puestos3) %>%
 
 #6- salarios segun puesto/rubro
 #Tomar, solo los rubros mayores, y el resto en otros.
-v
+
+
+#wordcloud de beneficios ------------------------------
+
+vacias_beneficios <- get_stopwords("es")
+
+vacias_beneficios <- vacias %>%
+  rename(palabra = word)
+
+vacias_beneficios <- read_csv("https://raw.githubusercontent.com/7PartidasDigital/AnaText/master/datos/diccionarios/vacias.txt",
+                              locale = default_locale())
+
+vacias_adhoc <- tibble(palabra = c("extendidas","vida","no", "plan", "/", "ley", "adicionales","Medicina","tengo","medicina","salud","Salud"))
+
+benefits <- rh[,24]
+benefits <- benefits %>%
+  filter(!is.na(beneficios)) %>%
+  mutate(beneficios = as.character(beneficios)) %>%
+  unnest_tokens(palabra,beneficios)
+
+benefits_bi <- benefits %>%
+  anti_join(vacias_beneficios) %>%
+  anti_join(vacias_adhoc)
+
+benefits_bi %>%
+  count(palabra, sort = TRUE) %>%
+  ungroup() %>%
+  wordcloud2(size = 0.6, shape = "circle", color = "random-light",backgroundColor = "#1C2833")
+
 
 
 

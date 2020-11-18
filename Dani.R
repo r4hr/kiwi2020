@@ -56,7 +56,8 @@ fuente <- "Fuente: Encuesta KIWI de Sueldos de RRHH para Latam"
 
 original <- sheets_read("1aeuu9dVfN42EjyvbmhEcsf0ilSz2DiXU-0MpnF896ss")
 
-
+tipo_cambio <- sheets_read("1tEc4-_gXJi4lJ_Bj_ysleC-O01jiVOumOQCxGQ1tShM") %>% 
+  select(pais, tipo_cambio)
 
 # Preprocesamiento ---------------------------------------
 kiwi <- original
@@ -64,7 +65,7 @@ kiwi <- original
 limpios <- make.names(colnames(kiwi))
 colnames(kiwi) <- limpios
 
-names(kiwi)
+.names(kiwi)
 rm(limpios)
 
 kiwi <- kiwi %>% 
@@ -244,6 +245,7 @@ rh <- rh %>%
                                                                   "Universitario abandonado"),
                                         "Maestría completa" = c("Doctorado en curso")))
 
+
 # Análisis exploratorio ----------------------------------
 
 glimpse(rh)
@@ -323,22 +325,21 @@ liderazgo %>%
 
 
 #### Análisis de preguntas bizarras####
-preg <- kiwi[,c(2,41)] 
+preg <- rh[,c("genero","pregunta_bizarra")] 
 
-names(preg) <- c("genero", "pregunta")
 
 listado_preg <- preg %>% 
-  filter(str_detect(pregunta, "hijo[s]")|
-           str_detect(pregunta, "casad[ao]|casar")| 
-           str_detect(pregunta,"novio")|
-           str_detect(pregunta,"chongo")) %>% 
+  filter(str_detect(pregunta_bizarra, "hijo[s]")|
+           str_detect(pregunta_bizarra, "casad[ao]|casar")| 
+           str_detect(pregunta_bizarra,"novio")|
+           str_detect(pregunta_bizarra,"chongo")) %>% 
   print(n=nrow(.))
 
 preg %>% 
-  filter(str_detect(pregunta, "hijo[s]")|
-           str_detect(pregunta, "casad[ao]|casar")| 
-           str_detect(pregunta,"novio")|
-           str_detect(pregunta,"chongo")) %>% 
+  filter(str_detect(pregunta_bizarra, "hijo[s]")|
+           str_detect(pregunta_bizarra, "casad[ao]|casar")| 
+           str_detect(pregunta_bizarra,"novio")|
+           str_detect(pregunta_bizarra,"chongo")) %>% 
   group_by(genero) %>% 
   summarise (n = n()) %>% 
   mutate(freq = percent(n/sum(n)))
@@ -361,7 +362,7 @@ vacias <- read_csv("https://tinyurl.com/7PartidasVacias",
 vacias_custom <- tibble(palabra = c("coeficiente", "puesto", "puestos", "operativos"))
 
 
-coment <- kiwi[,61]
+coment <- kiwi[,59]
 coment <- coment %>% 
   filter(!is.na(Comentarios)) %>% 
   mutate(Comentarios = as.character(Comentarios)) %>% 
@@ -807,7 +808,10 @@ ggplot(recorte_educacion, (aes(x = puesto, fill = tipo_universidad))) + #Tipo de
   labs(x="",y="") +
     estilov +
   scale_fill_manual(values = c(gris, verde, azul)) +
-  coord_flip()
+  coord_flip() +
+  labs(title = "Cantidad de respuestas según puesto y univesidad",
+       x = "", fill = "Tipo de Universidad",
+       caption = fuente)
 
 #Composicion del area segun tipo de universidad
 
@@ -884,6 +888,10 @@ ggplot(recorte_educacion, (aes(x = nivel_formacion, fill = puesto))) + #Tipo de 
 
 #Nivel estudios/ remuneracion
 
+estudios <- profiling_num(recorte_educacion)
+es_p05 <- profiling_num(recorte_educacion)[1,6]
+es_p95 <- profiling_num(recorte_educacion)[1,10]
+
 ne_salario <- recorte_educacion 
   
 ne_salario %>% #Problemas con la moneda
@@ -900,6 +908,10 @@ ne_salario %>%
   select(pais, nivel_formacion, genero, puesto) %>%
   filter(pais == "Argentina"| puesto == "Director"| puesto == "Gerente" | puesto == "HRBP",
          genero != "Género Diverso") %>%
+  mutate(nivel_formacion = factor(nivel_formacion,
+                                  levels = c("Maestría completa", "Maestría en curso",
+                                             "Universitario completo", "Universitario en curso",
+                                             "Terciario completo", "Secundario completo"))) %>% 
   group_by(nivel_formacion) %>% 
   ggplot(aes (x= nivel_formacion, fill = genero)) + 
   geom_bar(position = "fill") +
@@ -910,14 +922,47 @@ ne_salario %>%
 
 ne_salario %>% 
   select(pais, nivel_formacion, genero, puesto) %>%
-  filter(pais == "Argentina"| puesto == "Director"| puesto == "Gerente" | puesto == "HRBP",
+  filter(pais == "Argentina",
          genero != "Género Diverso") %>%
+  mutate(nivel_formacion = factor(nivel_formacion,
+                                  levels = c("Maestría completa", "Maestría en curso",
+                                             "Universitario completo", "Universitario en curso",
+                                             "Terciario completo", "Secundario completo"))) %>% 
   group_by(nivel_formacion) %>% 
   ggplot(aes (x= nivel_formacion, fill = genero)) + 
   geom_bar() +
   theme(axis.text.x = element_text(angle = 90)) + 
   labs(x="",y="") +
   scale_fill_manual(values = colores) +
-  facet_wrap(~genero, nrow = 2)
+  facet_wrap(~genero, ncol = 2) +
+  estiloh +
+  theme(legend.position = "none")
 
  
+#wordcloud de beneficios ------------------------------
+
+vacias_beneficios <- get_stopwords("es")
+
+vacias_beneficios <- vacias %>%
+  rename(palabra = word)
+
+vacias_beneficios <- read_csv("https://raw.githubusercontent.com/7PartidasDigital/AnaText/master/datos/diccionarios/vacias.txt",
+                              locale = default_locale())
+
+vacias_adhoc <- tibble(palabra = c("extendidas","vida","no", "plan", "/", "ley", "adicionales","Medicina","tengo","medicina","salud","Salud"))
+
+benefits <- rh[,24]
+benefits <- benefits %>%
+  filter(!is.na(beneficios)) %>%
+  mutate(beneficios = as.character(beneficios)) %>%
+  unnest_tokens(palabra,beneficios)
+
+benefits_bi <- benefits %>%
+  anti_join(vacias_beneficios) %>%
+  anti_join(vacias_adhoc)
+
+benefits_bi %>%
+  count(palabra, sort = TRUE) %>%
+  ungroup() %>%
+  wordcloud2(size = 0.6, shape = "circle", color = "random-light",backgroundColor = "#1C2833")
+
