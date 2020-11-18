@@ -194,9 +194,9 @@ glimpse(kiwi)
 
 # Respuestas por países
 paises <- kiwi %>% 
-  select(`País en el que trabajas`) %>% 
+  select(`pais`) %>% 
   mutate(cuenta = 1) %>% 
-  group_by(`País en el que trabajas`) %>% 
+  group_by(`pais`) %>% 
   summarise(Cuenta = sum(cuenta)) %>% 
   filter(Cuenta > 4) %>% 
   arrange(-Cuenta)
@@ -208,9 +208,9 @@ gt(paises) %>%
 
 # Respuestas por provincia (Sólo para Argentina)
 provincias <- kiwi %>% 
-  filter(`País en el que trabajas` == "Argentina") %>% 
+  filter(`pais` == "Argentina") %>% 
   mutate(cuenta = 1) %>% 
-  group_by(`Provincia donde trabajas`) %>% 
+  group_by(`provincia`) %>% 
   summarise(Cuenta = sum(cuenta)) %>% 
   arrange(-Cuenta)
 
@@ -219,7 +219,7 @@ gt(provincias)
 
 
 liderazgo <- kiwi %>% 
-  select(Género, `¿En qué puesto trabajás?`,`País en el que trabajas` ,`¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
+  select(genero, `puesto`,`pais` ,`sueldo_bruto`)
 
 names(liderazgo) <- c("genero", "puesto","pais", "sueldo")
 
@@ -227,8 +227,8 @@ names(liderazgo) <- c("genero", "puesto","pais", "sueldo")
 head(liderazgo)
 
 kiwi %>% 
-  select(`Rubro de la empresa`) %>% 
-  group_by(`Rubro de la empresa`) %>% 
+  select(`rubro`) %>% 
+  group_by(`rubro`) %>% 
   count(sort = TRUE) %>% 
   print(n = nrow(.))
 
@@ -363,8 +363,8 @@ tc <- tibble (pais, tipo_cambio) # Creo una tabla con los tipos de cambio de los
 
 sueldos_dolar <- kiwi %>% 
   filter(Trabajo !="Freelance") %>% 
-  select(Género, `¿En qué puesto trabajás?`,`País en el que trabajas` ,
-         `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`,
+  select(genero, `puesto`,`pais` ,
+         `sueldo_bruto`,
          `Tipo de contratación`)
 
 names(sueldos_dolar) <- c("genero", "puesto","pais", "sueldo", "contrato")
@@ -743,48 +743,220 @@ ggplot(brecha_graf,
 #Esto, a nivel comparativo, a groso modo y sin contemplar otras variables.
 #1- Segun Pais: (No se como hacer la conversion)
 
-#aca usar sueldos en dolares
+
 
 #2- En Argentina, por región
 
-#cree una tabla con las provincias por region (verificar geografia)
+#regiones   de Arg
 
 region_Arg <- sheets_read("1DBw_nAkIggFvuce-_S20BuNW8ir3Wv1i3hdF44fPWrU")
 
-region_Arg
+#Sueldos_Promedios por region :
 
-region_Arg <- region_Arg %>% 
-  rename(provincias = `nombre`) %>% 
-  filter(!is.na(provincias))
+region_Arg2 <- rh%>% 
+  filter(`pais` == "Argentina") %>% 
+  select(provincia, rubro, puesto, funcion_rh, sueldo_bruto) %>% 
+  mutate(cuenta=1) %>% 
+  left_join(region_Arg, by="provincia") 
 
-regiones_arg2 <- kiwi %>% 
-  filter(`País en el que trabajas` == "Argentina") %>% 
-  mutate(cuenta = 1) %>% 
-  group_by(`Provincia donde trabajas`) %>% 
-  rename(provincias = `Provincia donde trabajas`) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-
-regiones_arg3 <-regiones_arg2 %>% 
-  left_join(regiones_arg2, by="provincias") %>% 
+  names(region_Arg2)
 
 
-#ver como usar el left_join()para regiones, porque me trabe
-#de  aca: una vez filtrado por region, sacar la mediana por provincia y hacer 
-  #un grafico de barras horizontal
-  
-#3 Ajustes:
+region_Arg2 = region_Arg2[,c(7,1,2,3,4,5,6)] %>% 
+  group_by(regiones) %>% 
+  summarise(Promedio = mean(sueldo_bruto),
+            total = n()) %>% 
+  print(n = nrow(.))
 
-#Una vez filtrado por region, sacar los ajustes anuales,  y hacer un grafico de barras horizontal
 
-#4-Edad Vs Salarios
+region_Arg2 %>% 
+  filter(total>3) %>% 
+  arrange(Promedio) %>% 
+  gt(region_Arg2) %>% 
+  tab_header(title = "Sueldos Promedio por Región",
+            (subtitle= "Argentina"))
 
-Edad <- kiwi %>%
-    select("Tipo de contratación","Trabajo",Género, Edad,`¿En qué puesto trabajás?`, `¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
+region_Arg2 %>% 
+  filter(total>3) %>% 
+  ggplot(aes(x = regiones, y = Promedio,))+
+  geom_col(position = "dodge")+
+  coord_flip()+
+  theme_minimal()+
+  theme(legend.position = "bottom")+
+  labs(title = "Sueldo promedio por Region en Argentina",
+                                        subtitle = "En pesos argentinos",
+                                        x= "", y = "", fill = "Género",
+                                        caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")
+
+
+#Sueldos_Mediana por region :
+
+region_Arg3 <- rh%>% 
+  filter(`pais` == "Argentina") %>% 
+  select(provincia, rubro, puesto, funcion_rh, sueldo_bruto) %>% 
+  mutate(cuenta=1) %>% 
+  left_join(region_Arg, by="provincia")
+
+view(region_Arg3)
+names(region_Arg3)
+
+region_Arg3 = region_Arg3[,c(7,1,2,3,4,5,6)] %>% 
+  group_by(regiones) %>% 
+  summarise(Mediana = median(sueldo_bruto),
+            total = n()) %>% 
+  print(n = nrow(.))
+
+region_Arg3 %>% 
+  filter(total>3) %>% 
+  arrange(Mediana) %>% 
+  gt(region_Arg3) %>% 
+  tab_header(title = "Sueldos Mediana por Región",
+             (subtitle= "Argentina"))
+
+region_Arg3 %>% 
+  filter(total>3) %>% 
+  ggplot(aes(x = regiones, y = Mediana,))+
+  geom_col(position = "dodge")+
+  coord_flip()+
+  theme_minimal()+
+  theme(legend.position = "bottom")+
+  labs(title = "Sueldo Mediana por Region en Argentina",
+       subtitle = "En pesos argentinos",
+       x= "", y = "", fill = "Género",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")
+
+
+#Analizar ajustes
+
+head(Ajustes)
+
+#promedio de ajustes por pais
+
+Ajustes_Paises <- rh %>% 
+  select(pais, ajuste, "ajuste_porcentaje", "ajuste_mes")%>% 
+  mutate(ajuste_porcentaje= as.numeric(unlist(ajuste_porcentaje))) %>% 
+  filter(!is.na(ajuste_porcentaje)) %>% 
+  filter(ajuste_porcentaje>0) %>% 
+  filter(ajuste_porcentaje<100)%>% 
+  group_by(pais) %>% 
+  summarise(Promedio = mean(ajuste_porcentaje),
+            total = n()) %>% 
+  arrange(Promedio) %>% 
+  print(n = nrow(.))
+
+
+Ajustes_Paises %>% 
+  filter(total>2) %>% 
+  select(pais,Promedio) %>% 
+  arrange(Promedio) %>% 
+  gt(Ajustes_Paises) %>% 
+  tab_header(title = "Ajustes Promedio por Pais")
+
+#promedio de ajustes en Argentina
+
+view(rh)
+
+Ajustes_Arg_promedio <- rh %>% 
+  filter(`pais` == "Argentina") %>% 
+  select(provincia, ajuste, "ajuste_porcentaje", "ajuste_mes")%>% 
+  mutate(ajuste_porcentaje= as.numeric(unlist(ajuste_porcentaje))) %>% 
+  filter(!is.na(ajuste_porcentaje)) %>% 
+  filter(ajuste_porcentaje>0) %>% 
+  filter(ajuste_porcentaje<100)%>% 
+  group_by(`provincia`) %>% 
+  summarise(Promedio = mean(ajuste_porcentaje),
+            total = n()) %>% 
+  arrange(Promedio) %>% 
+  print(n = nrow(.))
+
+view(Ajustes_Arg)
+
+
+Ajustes_Arg_promedio %>% 
+  filter(total>2) %>% 
+  select(provincia,Promedio) %>% 
+  arrange(Promedio) %>% 
+  gt(Ajustes_Paises) %>% 
+  tab_header(title = "Ajustes Promedio por Provincia",
+             subtitle = "Solo Argentina")
+
+#Mediana de Ajustes en Argentina
+
+Ajustes_Arg_Mediana <- rh %>% 
+  filter(`pais` == "Argentina") %>% 
+  select(provincia, ajuste, "ajuste_porcentaje", "ajuste_mes")%>% 
+  mutate(ajuste_porcentaje= as.numeric(unlist(ajuste_porcentaje))) %>% 
+  filter(!is.na(ajuste_porcentaje)) %>% 
+  filter(ajuste_porcentaje>0) %>% 
+  filter(ajuste_porcentaje<100)%>% 
+  group_by(`provincia`) %>% 
+  summarise(Mediana = median(ajuste_porcentaje),
+            total = n()) %>% 
+  arrange(Mediana) %>% 
+  print(n = nrow(.))
+
+view(Ajustes_Arg)
+
+Ajustes_Arg_Mediana %>% 
+  filter(total>2) %>% 
+  select(provincia,Mediana) %>% 
+  arrange(Mediana) %>% 
+  gt(Ajustes_Paises) %>% 
+  tab_header(title = "Ajustes Mediana por Provincia",
+             subtitle = "Solo Argentina")
+
+#Mediana de Ajustes por Region 
+
+
+Ajustes_Reg_Mediana <- rh%>% 
+  filter(`pais` == "Argentina") %>% 
+  select(provincia, ajuste, "ajuste_porcentaje", "ajuste_mes")%>% 
+  mutate(ajuste_porcentaje= as.numeric(unlist(ajuste_porcentaje))) %>% 
+  left_join(region_Arg, by="provincia")
+view(Ajustes_Reg_Mediana)
+
+names(Ajustes_Reg_Mediana)
+
+Ajustes_Reg_Mediana = Ajustes_Reg_Mediana[,c(5,1,2,3,4)]
+
+Ajustes_Reg_Mediana%>% 
+  group_by(regiones) %>% 
+  summarise(Mediana = median(ajuste_porcentaje),
+            total = n()) %>% 
+  filter(total>5) %>% 
+  print(n = nrow(.)) %>% 
+  arrange(-Mediana) %>% 
+  select(regiones, Mediana) %>% 
+  gt(Ajustes_Reg_Mediana) %>% 
+  tab_header(title = "Ajustes Mediana por Region",
+             subtitle = "Solo Argentina")#ver por que en Patagonia da cero
+
+view(Ajustes_Reg_Mediana)
+
+Ajustes_Reg_Mediana%>% 
+  group_by(regiones) %>% 
+  summarise(Mediana = median(ajuste_porcentaje),
+            total = n()) %>% 
+  filter(total>5) %>% 
+  print(n = nrow(.)) %>% 
+  arrange(-Mediana) %>% 
+  select(regiones, Mediana) %>% 
+  ggplot(aes(x = Mediana, y = regiones,))+
+  geom_col(position = "dodge")+
+  coord_flip()+
+  theme_minimal()+
+  theme(legend.position = "bottom")+
+  labs(title = "Ajustes_Mediana por Region en Argentina",
+       subtitle = "En pesos argentinos",
+       x= "", y = "", fill = "Género",
+       caption = "Fuente: Encuesta KIWI de Sueldos de RRHH Latam \n Club de R para RRHH")
+
+#Edad Vs Salarios
+
+Edad <- rh %>%
+  select("tipo_contratacion","trabajo",genero, edad,`puesto`, `sueldo_bruto`)
 
 names(Edad) <- c("Jornada","Trabajo","genero","edad","puesto","sueldo")
-
-head(Edad)
 
 Edad <- Edad %>% 
   filter(!is.na(puesto)) %>%
@@ -794,8 +966,6 @@ Edad <- Edad %>%
   mutate(sueldo = as.numeric(unlist(sueldo)),
          cuenta = 1) 
 
-head(Edad)
-
 Edad %>% group_by(edad, genero) %>% 
   summarise(sueldo_prom = mean(sueldo), 
             cuenta = sum(cuenta)) %>% 
@@ -804,23 +974,23 @@ Edad %>% group_by(edad, genero) %>%
 
 Edad2 <- Edad %>%
   mutate(sueldo = as.numeric(unlist(sueldo))) %>% 
-    mutate(Rangos_Edad = case_when(
+  mutate(Rangos_Edad = case_when(
     edad %in% 18:30 ~ "Hasta 30",
     edad %in% 31:40 ~ "Entre 31 y 40",
     edad %in% 41:50 ~ "Entre 41 y 50",
     edad > 50 ~ "Más de 50"),
     Rangos_Edad = factor(Rangos_Edad, 
                          levels = c("Hasta 30", "Entre 31 y 40","Entre 41 y 50", "Más de 50"))) 
-  
+
 
 Edad3<- Edad2 %>%
   select(Rangos_Edad, sueldo) %>%
   filter(sueldo>1) %>% 
   group_by(Rangos_Edad) %>% 
-  summarise(Sueldo_Promedio = mean(sueldo)) # ver si estan bien los promedios
+  summarise(Sueldo_Promedio = mean(sueldo))
 
-#tabla
-
+Edad3
+  
 gt(Edad3) %>% 
   tab_header(title = "Sueldos Promedio por Rango de Edad")
 
@@ -916,4 +1086,10 @@ gt(puestos3) %>%
 #Sacar el promedio y la mediana
 
 #6- salarios segun puesto/rubro
-#Tomar, solo los rubros mayores, y el resto en otros. 
+#Tomar, solo los rubros mayores, y el resto en otros.
+v
+
+
+
+
+
