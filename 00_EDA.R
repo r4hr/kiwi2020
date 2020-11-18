@@ -184,11 +184,98 @@ puestos_dist2 <- rh %>%
   count() %>% 
   pull()
 
+
+# En la columna de contactos hay gente que usó el símbolo "+" lo cual impide deshacer la lista
+# Busco manualmente los índices que tienen el símbolo +
+rh$contactos_linkedin
+rh$contactos_linkedin[c(1:400)]
+
+# Modifica los registros
+rh$contactos_linkedin[[17]] <- 500
+rh$contactos_linkedin[[25]] <- 1000
+rh$contactos_linkedin[[72]] <- 500
+rh$contactos_linkedin[[85]] <- 1000
+rh$contactos_linkedin[[151]] <- 800
+rh$contactos_linkedin[[217]] <- 500
+rh$contactos_linkedin[[225]] <- 1000
+rh$contactos_linkedin[[272]] <- 500
+rh$contactos_linkedin[[285]] <- 1000
+rh$contactos_linkedin[[342]] <- 1000
+rh$contactos_linkedin[[366]] <- 500
+rh$contactos_linkedin[[386]] <- 30000
+rh$contactos_linkedin[[389]] <- 500
+rh$contactos_linkedin[[403]] <- 5000
+rh$contactos_linkedin[[450]] <- 500
+rh$contactos_linkedin[[464]] <- 500
+rh$contactos_linkedin[[601]] <- 500
+rh$contactos_linkedin[[604]] <- 500
+
+# En las siguientes columnas, Google Sheet no reconoce el punto como símbolo decimal
+# Corrijo manualmente los registros para que sea un valor numérico
+rh$anios_en_empresa[[21]]  <- 1.5
+rh$anios_en_empresa[[53]]  <- 1.5
+rh$anios_en_empresa[[117]] <- 1.5
+rh$anios_en_empresa[[181]] <- 2.5
+rh$anios_en_empresa[[222]] <- 0
+rh$anios_en_empresa[[282]] <- 4.5
+rh$anios_en_empresa[[346]] <-  3.5
+rh$anios_en_empresa[[360]] <- 1.5
+rh$anios_en_empresa[[365]] <- 1.5
+rh$anios_en_empresa[[553]] <- 1.5
+rh$anios_en_empresa[[653]] <- 1.5
+
+
+rh$anios_en_puesto[[21]]  <- 1.5
+rh$anios_en_puesto[[53]]  <- 1.5 
+rh$anios_en_puesto[[117]] <- 1.5
+rh$anios_en_puesto[[161]] <- 2.5
+rh$anios_en_puesto[[181]] <- 2.5
+rh$anios_en_puesto[[346]] <- 2.5
+rh$anios_en_puesto[[360]] <- 1.5
+rh$anios_en_puesto[[365]] <- 1.5
+rh$anios_en_puesto[[553]] <- 1.5
+
+
+rh$anios_experiencia[[117]] <- 1.5
+rh$anios_experiencia[[360]] <- 3.5
+rh$anios_experiencia[[365]] <- 1.5
+rh$anios_experiencia[[402]] <- 0.5
+rh$anios_experiencia[[492]] <- 2.4
+rh$anios_experiencia[[529]] <- 6.5
+rh$anios_experiencia[[653]] <- 4.5
+
+
+rh$ajuste_porcentaje[[61]]  <-  9.5
+rh$ajuste_porcentaje[[62]]  <- 12.69
+rh$ajuste_porcentaje[[90]]  <- 23.7
+rh$ajuste_porcentaje[[119]] <- 7.3
+rh$ajuste_porcentaje[[225]] <- 2.5
+rh$ajuste_porcentaje[[242]] <- 20.7
+rh$ajuste_porcentaje[[262]] <- 15.4
+rh$ajuste_porcentaje[[337]] <- 2.5
+rh$ajuste_porcentaje[[350]] <- 14.52
+rh$ajuste_porcentaje[[433]] <- 12.8
+rh$ajuste_porcentaje[[434]] <- 12.8
+rh$ajuste_porcentaje[[435]] <- 8.11
+rh$ajuste_porcentaje[[449]] <- 13.5
+rh$ajuste_porcentaje[[463]] <- 22.7
+rh$ajuste_porcentaje[[488]] <- 5.5
+rh$ajuste_porcentaje[[513]] <- 30.5
+rh$ajuste_porcentaje[[529]] <- 28.06
+rh$ajuste_porcentaje[[581]] <- 0
+rh$ajuste_porcentaje[[592]] <- 50
+rh$ajuste_porcentaje[[615]] <- 16.2
+rh$ajuste_porcentaje[[630]] <- 0.5
+rh$ajuste_porcentaje[[640]] <- 35.2
+rh$ajuste_porcentaje[[648]] <- 44.5
+
+
+rh <- unnest(data = rh, cols = c(anios_en_empresa, anios_en_puesto, anios_experiencia,
+                                 ajuste_porcentaje, contactos_linkedin), keep_empty = TRUE)
+
 # Análisis exploratorio ----------------------------------
 
-glimpse(kiwi)
-
-
+glimpse(rh)
 
 
 
@@ -218,19 +305,22 @@ provincias <- kiwi %>%
 gt(provincias)
 
 
-liderazgo <- kiwi %>% 
-  select(Género, `¿En qué puesto trabajás?`,`País en el que trabajas` ,`¿Cuál es tu remuneración BRUTA MENSUAL en tu moneda local? (antes de impuestos y deducciones)`)
-
-names(liderazgo) <- c("genero", "puesto","pais", "sueldo")
+liderazgo <- rh %>% 
+  select(sueldo_bruto, genero, puesto,pais)
 
 
 head(liderazgo)
 
-kiwi %>% 
-  select(`Rubro de la empresa`) %>% 
-  group_by(`Rubro de la empresa`) %>% 
-  count(sort = TRUE) %>% 
-  print(n = nrow(.))
+
+top_5_rubros <- rh %>% 
+  select(rubro) %>% 
+  group_by(rubro) %>% 
+  count(sort = TRUE) %>%
+  filter(rubro != "Otros", n > 30) %>% 
+  pull(var = rubro)
+
+top_5_rubros[1] <- "Tecnología"
+
 
 # Exploración para Argentina
 
