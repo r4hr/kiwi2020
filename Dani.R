@@ -710,8 +710,6 @@ satisf <- rh %>%
   select(genero, sueldo_bruto, satisfaccion)
 
 
-satisf <- satisf %>% 
-  filter(sueldo > 30000)
 
 profiling_num(satisf)
 
