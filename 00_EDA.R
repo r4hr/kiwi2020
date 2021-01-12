@@ -1174,6 +1174,24 @@ benefits_bi %>%
 
 
 
+# Aumentos --------------
 
+cant_ajustes <- rh %>% 
+  select(pais, provincia, rubro, origen_capital, ajuste) %>% 
+  mutate(ajustes_anio = case_when(
+    ajuste == "No tuve ajustes" ~ "0", 
+    ajuste == "1 solo" ~ "1",
+    ajuste == "2 ajustes" ~ "2",
+    ajuste == "3 o más ajustes" ~ "3"),
+    ajustes_anio = factor(ajustes_anio, levels = c("0", "1", "2", "3")))
+
+tabla_ajustes <- cant_ajustes %>% 
+  select(ajustes_anio) %>% 
+  mutate(cuenta = 1) %>% 
+  group_by(ajustes_anio) %>% 
+  summarise(total = sum(cuenta)) %>% 
+  arrange(ajustes_anio)
+
+gt(tabla_ajustes)
 
 

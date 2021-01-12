@@ -16,7 +16,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.retina = 3, out.width = "70%", fig.align = "center")
 ```
 
-# Introducción
+\# Introducción
 
 El [Club de R para RRHH](https://r4hr.club) es una comunidad de aprendizaje de programación de R, destinada a los profesionales y estudiantes que trabajan o quieren trabajar en el área.
 
@@ -459,7 +459,7 @@ rh %>%
 
 Veamos estos datos de otra manera:
 
-```{r slope,  fig.height=8}
+```{r slope,  fig.height=9}
 library(CGPfunctions)
 
 slope_df <- rh %>% 
@@ -532,12 +532,175 @@ datatable(
 
 ```
 
+# Sueldos Argentina
+
+Teniendo en cuenta que la cantidad mayoritaria de respuestas corresponde a personas de Argentina, vamos a realizar un análisis detallado de los sueldos en este país.
+
+Como primeros pasos, vamos a filtrar los datos correspondientes a Argentina, y luego filtramos los sueldos que estén entre los percentiles 5 y 95, para eliminar valores espurios o extremos que ensucien el análisis.
+
+También eliminamos el puesto de *Director* del análisis y las respuestas con *Género diverso* por la baja cantidad de respuestas.
+
+En esta instancia, también simplificamos los nombres de algunos rubros para mejorar las visualizaciones de los resultados.
+
+```{r arg_prep}
+
+rh_ar <- rh %>% 
+  filter(pais == "Argentina")
+
+
+# Poda de sueldos entre percentiles 5 y 95
+numericos2 <- rh_ar %>% 
+  select_if(is.numeric) %>% 
+  profiling_num()
+
+p_05 <- numericos2[8,6]
+p_95 <-numericos2[8,10]
+
+rh_ar <- rh_ar %>% 
+  filter(between(sueldo_bruto, p_05, p_95),
+         puesto != "Director",
+         genero != "Género Diverso",
+         puesto != "Pasante") %>% 
+  mutate(rubro = fct_recode(rubro, "Servicios financieros" = "Servicios financieros; seguros",
+                             "Transporte" = "Transporte (incluyendo aviación civil; ferrocarriles por carretera)",
+                            "Ind. Automotriz y Autopartistas" = "Terminales automotrices, fábricas autopartistas, y afines",
+                            "Tecnología" = "Tecnologías de Información, Sistemas, y afines",
+                            "Ind. Petrolera" = "Petróleo y producción de gas; refinación de petróleo"))
+
+
+```
+
+## Distribución de sueldos por puesto
+
+En el siguiente gráfico podemos ver la distribución de los sueldos por cada uno de los puestos. En los *boxplots* podemos ver:
+
+-   Primer cuartil: La parte inferior de la caja.
+
+-   Mediana: La línea gruesa dentro de cada rectángulo.
+
+-   Tercer cuartil: La parte superior de la caja
+
+-   Outliers: son los valores extremos identificados con puntos.
+
+```{r box_puestos_ar}
+
+rh_ar %>% 
+  ggplot(aes(x = puesto, y = sueldo_bruto, fill = genero)) +
+  geom_boxplot() +
+  scale_fill_manual(values = genero) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  estiloh +
+  labs(title = "Distribución de sueldos por género",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "", fill = "Género",
+       caption = fuente) +
+  theme(panel.grid.minor.y = element_line(color = "#AEB6BF"))
+```
+
+Hay varias cosas interesantes para analizar:
+
+Si miramos las medianas de los puestos, en la mayoría de los puestos hay una paridad relativa, como por ejemplo en *HRBP, Jefe* y *Gerentes.* Tampoco hay mucha diferencia en la mediana de los *Administrativos*. En las posiciones de *Analista,* y *Responsable* los varones tienen una mediana salarial un poco más alta.
+
+Pero lo más interesante son las **distribuciones de los sueldos**. Miremos por ejemplo los Jefes. La mediana es prácticamente la misma, pero *el tamaño de la parte inferior de la caja es mucho más amplia en el caso de las mujeres,* mientras que la parte superior de la caja es más amplia en el caso de los varones.
+
+Esto nos da la pauta que si bien el valor que divide a la mitad la muestra de hombres y mujeres (la mediana) es muy parejo, el rango de los sueldos de las Jefas llega a valores más bajos lo que implica que el piso es más bajo para mujeres que para hombres. Mientras que de la mediana *hacia arriba* es más amplia en el caso de los hombres en comparación con las mujeres.
+
+En el único puesto que hay una distribución similar entre ambos géneros es en el caso de los HRBP, pero en el resto de los casos vemos que la asimetría que describimos anteriormente se repite.
+
+Veamos el sueldo promedio en cada uno de los rubros.
+
+## Análisis por rubros
+
+En el gráfico a continuación podemos ver los sueldos promedios por rubro, teniendo en cuenta a los rubros con más de 12 respuestas.
+
+```{r rubros_ar}
+
+rubro_ar <- rh_ar %>% 
+  filter(puesto != "Director") %>% 
+  select(rubro, sueldo_bruto) %>% 
+  group_by(rubro) %>% 
+  summarise(media_sueldo = mean(sueldo_bruto),
+            respuestas = n()) %>% 
+  arrange(-respuestas)
+
+top_rubros <- rubro_ar %>% 
+  filter(rubro != "Otros", respuestas > 15) %>% 
+  pull(rubro)
+
+rubro_ar %>% 
+  filter(respuestas > 12) %>% 
+  ggplot(aes(x = media_sueldo, y = reorder(rubro, media_sueldo))) +
+  geom_col(fill = azul) +
+  geom_text(aes(label = round(x=media_sueldo, 0), hjust = 1.5),size = 3, color = "white") +
+  labs(title = "Promedio salarial por rubro",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "",
+       caption = fuente) +
+  estilov +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+
+```
+
+Ahora comparemos los sueldos por rubros y géneros. Aquí podremos apreciar las diferencias entre los sueldos promedios de los hombres y mujeres en cada rubro.
+
+```{r rubro_genero_ar}
+
+rh_ar %>% 
+  filter(rubro %in% top_rubros) %>% 
+  select(rubro, sueldo_bruto, genero) %>% 
+  group_by(rubro, genero) %>% 
+  summarise(media_sueldo = mean(sueldo_bruto),
+            respuestas = n()) %>% 
+  arrange(-respuestas) %>% 
+  ggplot(aes(x = media_sueldo, y = reorder(rubro, media_sueldo), fill = genero)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = round(x=media_sueldo,0), hjust = 1.4, vjust = 0.3),
+            size = 3, color = "white", position = position_dodge(width = .9)) +
+  scale_fill_manual(values = genero) +
+  labs(title = "Promedio salarial por rubro y género",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "", fill = "Género",
+       caption = fuente) +
+  scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  estilov +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+```
+
+Por último, analicemos los sueldos de los 6 rubros con mayor cantidad de respuestas, y visualicemos las distribuciones de los sueldos por puesto y género. En este gráfico podemos ver los cuartiles delimitando las zonas sombreadas, y la mediana con el punto gris. Los puntos violetas y verdes representan a las mujeres y los hombres respectivamente en cada uno de los puestos.
+
+```{r dist_rubro_gen, out.width="90%", fig.height=7}
+library(ggeconodist)
+
+rh_ar %>% 
+  filter(genero != "Género Diverso",
+         puesto != "Director",
+         rubro %in% c("Tecnología", "Servicios de salud", "Comercio",
+                      "Alimentación; bebidas; tabaco",
+                      "Servicios de consultoría", "Construcción"))  %>% 
+  ggplot(aes(x = puesto, y = sueldo_bruto)) +
+  geom_econodist(width = 0.5) +
+  geom_point(aes(y = sueldo_bruto, color = genero), alpha = 0.3) +
+  scale_color_manual(values = genero) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  coord_flip() +
+  facet_wrap(~rubro, ncol = 2) +
+  estilov +
+  labs(title = "Distribución salarial por puesto y rubro",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "", color = "Género",
+       caption = fuente)
+
+```
 
 # Educación
 
 En esta sección queremos indagar si hay relación entre la formación y la remuneración, y si impacta también el tipo de universidad, pública o privada, en la remuneración y posición. Primero veamos entre los distintos países como se distribuye la muestra entre profesionales provenientes de universidades públicas y privadas.
 
-Dado que tenemos relativamente pocas respuestas de otros países que no sean Argentina, no podemos  sacar ninguna conclusión seria, sólo mencionar que en Argentina, hay una virtual paridad entre los estudiantes y graduados de universidades públicas y privadas. Posteriormente analizaremos la situación por regiones dentro del país.
+Dado que tenemos relativamente pocas respuestas de otros países que no sean Argentina, no podemos sacar ninguna conclusión seria, sólo mencionar que en Argentina, hay una virtual paridad entre los estudiantes y graduados de universidades públicas y privadas. Posteriormente analizaremos la situación por regiones dentro del país.
 
 Las proporciones de respuestas según al tipo de universidad que asistieron los participantes de la encuesta es la siguiente:
 
@@ -630,7 +793,6 @@ ggplot(carreras, aes(x = carrera_grado)) +
        caption = fuente)
 
 ```
-
 
 Dada la cantidad de respuestas por país, el análisis que haremos desde aquí en adelante sólo será para **Argentina**.
 
@@ -782,9 +944,9 @@ ne_salario %>%
 
 Algunas conclusiones que podemos extraer del gráfico anterior:
 
-* Hay una fuerte predominancia de mujeres en puestos de baja jerarquía.
-* En los puestos de Gerencia y de Jefatura hay mayor predominancia de varones, pero aún así hay una paridad entre los distintos niveles educativos.
-* Posiciones altamente especializadas, como la de HRBP, requiere una formación universitaria.
+-   Hay una fuerte predominancia de mujeres en puestos de baja jerarquía.
+-   En los puestos de Gerencia y de Jefatura hay mayor predominancia de varones, pero aún así hay una paridad entre los distintos niveles educativos.
+-   Posiciones altamente especializadas, como la de HRBP, requiere una formación universitaria.
 
 Analicemos las proporciones de hombres y de mujeres en puesto de liderazgo.
 
@@ -875,7 +1037,6 @@ Del total de **hombres**, `r lideres_genero[2, 3]` respuestas, `r lideres_genero
 
 Con un *p-value* igual a `r round(resultados_test[1,3],3)` podemos afirmar que **`r valor_test`**.
 
-
 ## Análisis de sueldos y educación en Argentina
 
 En esta sección analizaremos los sueldos en comparación con los distintos niveles educativos.
@@ -915,7 +1076,6 @@ rh %>%
 
 ```
 
-
 Ahora veamos qué pasa si incluimos en el análisis el género para analizar los sueldos promedios y sus desvíos estándar.
 
 ```{r sueldo-educ-genero}
@@ -944,3 +1104,59 @@ rh %>%
        fill = "Género")
 ```
 
+# Otros Análisis
+
+## Relación entre satisfacción y sueldos
+
+Para este análisis nos preguntamos si hay relación entre el nivel salarial y la satisfacción.
+
+Para responder a esta pregunta, cruzamos los sueldos brutos de Argentina, contra los niveles de satisfacción con la actual empresa donde trabajan las personas que respondieron la encuesta.
+
+Los pasos que seguimos fueron los siguientes:
+
+-   A los sueldos brutos los segmentamos en 4 partes con igual cantidad de registros (cuartiles). Es decir, en el 1° cuartil tenemos el 25% de los datos, en el segundo cuartil tenemos el 50% de los datos, y en el 3° cuartil tenemos el 75% de los datos.
+-   En el primer cuartil están los sueldos más bajos, y el 4° los más altos.
+-   Los niveles de satisfacción van del 1 (Totalmente Insatisfecho), al 5, (Totalmente Satisfecho).
+
+```{r satisf, out.width="85%"}
+library(ggalluvial)
+
+satisf <- rh %>% 
+  filter(!is.na(satisfaccion),
+         genero %in% c("Femenino", "Masculino"),
+         pais == "Argentina") %>% 
+  select(genero, sueldo_bruto, satisfaccion)
+
+
+p25 <- profiling_num(satisf)[1,7]
+p50 <- profiling_num(satisf)[1,8]
+p75 <- profiling_num(satisf)[1,9]
+
+satisf <- satisf %>% 
+  mutate(cuartil = factor(case_when(
+    sueldo_bruto  <   p25  ~ "1Q",
+    sueldo_bruto > p25 & sueldo_bruto < p50 ~ "2Q",
+    sueldo_bruto > p50 & sueldo_bruto < p75 ~ "3Q",
+    TRUE   ~ "4Q")),
+    satisfaccion = factor(satisfaccion, 
+                             levels = c("1","2","3","4","5")), 
+    cuenta = 1)
+
+
+satisf <- satisf %>% 
+  group_by(genero, satisfaccion, cuartil) %>% 
+  summarise(cant = n())
+
+
+
+ggplot(as.data.frame(satisf), aes(y = cant, axis1 = cuartil, axis2 = satisfaccion)) +
+  geom_alluvium(aes(fill = genero), width = 1/12, alpha = 0.4) +
+  geom_stratum(width = 1/12, fill = "#8882F7") +
+  geom_label(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = c("Sueldo Bruto por Cuartil", "Nivel de Satisfacción"), expand = c(.05, .05)) +
+  scale_fill_manual(values = colores) +
+  estilo +
+  labs(title = "Relación entre nivel salarial y satisfacción con la empresa",
+       y = "", caption = fuente, fill = "Género")
+
+```

@@ -65,7 +65,7 @@ kiwi <- original
 limpios <- make.names(colnames(kiwi))
 colnames(kiwi) <- limpios
 
-.names(kiwi)
+names(kiwi)
 rm(limpios)
 
 kiwi <- kiwi %>% 
@@ -456,37 +456,148 @@ numericos2 <- rh_ar %>%
   select_if(is.numeric) %>% 
   profiling_num()
 
-p_05 <- numericos2[5,6]
-p_95 <-numericos2[5,10]
+p_05 <- numericos2[8,6]
+p_95 <-numericos2[8,10]
 
 rh_ar <- rh_ar %>% 
-  filter(between(sueldo_bruto, p_05, p_95))
+  filter(between(sueldo_bruto, p_05, p_95),
+         puesto != "Director", puesto != "Pasante",
+         genero != "Género Diverso") %>% 
+  mutate(rubro = fct_recode(rubro, "Servicios financieros" = "Servicios financieros; seguros",
+                             "Transporte" = "Transporte (incluyendo aviación civil; ferrocarriles por carretera)",
+                            "Ind. Automotriz y Autopartistas" = "Terminales automotrices, fábricas autopartistas, y afines",
+                            "Tecnología" = "Tecnologías de Información, Sistemas, y afines",
+                            "Ind. Petrolera" = "Petróleo y producción de gas; refinación de petróleo"))
 
-rubro <- rh_ar %>% 
+# Análisis de puestos
+rh_ar %>% 
+  ggplot(aes(x = puesto, y = sueldo_bruto, fill = genero)) +
+  geom_boxplot() +
+  scale_fill_manual(values = genero) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  estiloh +
+  labs(title = "Distribución de sueldos por género",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "", fill = "Género",
+       caption = fuente) +
+  theme(panel.grid.minor.y = element_line(color = "#AEB6BF"))
+
+
+
+# Análisis por rubros
+rubro_ar <- rh_ar %>% 
+  filter(puesto != "Director") %>% 
   select(rubro, sueldo_bruto) %>% 
   group_by(rubro) %>% 
-  summarise(mediana_sueldo = median(sueldo_bruto),
+  summarise(media_sueldo = mean(sueldo_bruto),
             respuestas = n()) %>% 
   arrange(-respuestas)
 
-print(rubro, n = 20)
+print(rubro_ar, n = 27)
 
+top_rubros <- rubro_ar %>% 
+  filter(rubro != "Otros", respuestas > 15) %>% 
+  pull(rubro)
 
-rubro %>% 
+rubro_ar %>% 
   filter(respuestas > 12) %>% 
-  ggplot(aes(x = mediana_sueldo, y = reorder(rubro, mediana_sueldo))) +
+  ggplot(aes(x = media_sueldo, y = reorder(rubro, media_sueldo))) +
   geom_col(fill = azul) +
-  geom_text(aes(label = round(x=mediana_sueldo, 0), hjust = 1.5),size = 3, color = "white") +
-  labs(title = "Mediana salarial por rubro",
+  geom_text(aes(label = round(x=media_sueldo, 0), hjust = 1.5),size = 3, color = "white") +
+  labs(title = "Promedio salarial por rubro",
        subtitle = "Datos de Argentina - en AR$",
        x = "", y = "",
        caption = fuente) +
+  estilov +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+
+rh_ar %>% 
+  filter(rubro %in% top_rubros) %>% 
+  select(rubro, sueldo_bruto, genero) %>% 
+  group_by(rubro, genero) %>% 
+  summarise(media_sueldo = mean(sueldo_bruto),
+            respuestas = n()) %>% 
+  arrange(-respuestas) %>% 
+  ggplot(aes(x = media_sueldo, y = reorder(rubro, media_sueldo), fill = genero)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = round(x=media_sueldo,0), hjust = 1.4, vjust = 0.3),
+            size = 3, color = "white", position = position_dodge(width = .9)) +
+  scale_fill_manual(values = genero) +
+  labs(title = "Promedio salarial por rubro y género",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "", fill = "Género",
+       caption = paste0("No incluye Directores \n", fuente)) +
   scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
   estilov +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank())
 
-# Representación en puestos de liderazgo ------------------
+
+
+
+
+
+rh_ar %>% 
+  filter(rubro %in% top_rubros) %>% 
+  select(rubro, sueldo_bruto, genero) %>% 
+  group_by(rubro, genero) %>% 
+  summarise(media_sueldo = mean(sueldo_bruto),
+            respuestas = n()) %>% 
+  arrange(-respuestas) %>% 
+  ggplot(aes(x = media_sueldo, y = reorder(rubro, media_sueldo), fill = genero)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = round(x=media_sueldo,0), hjust = 1.4, vjust = 0.3),
+            size = 3, color = "white", position = position_dodge(width = .9)) +
+  scale_fill_manual(values = genero) +
+  labs(title = "Promedio salarial por rubro y género",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "", fill = "Género",
+       caption = paste0("No incluye Directores \n", fuente)) +
+  scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  estilov +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+rh_ar %>% 
+  filter(genero != "Género Diverso") %>% 
+  ggplot(aes(x = puesto, y = sueldo_bruto, fill = genero)) +
+  geom_boxplot() +
+  scale_fill_manual(values = genero) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  estiloh +
+  labs(title = "Distribución de sueldos por género",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "", fill = "Género",
+       caption = fuente)
+
+library(ggeconodist)
+
+
+rh_ar %>% 
+  filter(genero != "Género Diverso",
+         puesto != "Director",
+         rubro %in% c("Tecnología", "Servicios de salud", "Comercio",
+                      "Alimentación; bebidas; tabaco",
+                      "Servicios de consultoría", "Construcción"))  %>% 
+  ggplot(aes(x = puesto, y = sueldo_bruto)) +
+  geom_econodist(width = 0.5) +
+  geom_point(aes(y = sueldo_bruto, color = genero), alpha = 0.3) +
+  scale_color_manual(values = genero) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  coord_flip() +
+  facet_wrap(~rubro, ncol = 2) +
+  estilov +
+  labs(title = "Distribución salarial por puesto y rubro",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "", color = "Género",
+       caption = fuente)
+
+## Seguir con sueldos por años de experiencia
+## Seguir con sueldos por tamaño de empresa
+
+  # Representación en puestos de liderazgo ------------------
 
 
 # Representación de género en la encuesta
@@ -702,15 +813,18 @@ ggplot(brecha_graf,
         text = element_text(family = "Roboto"))
 
 
+
 # Satisfacción -------------------------
+library(ggalluvial)
 
 satisf <- rh %>% 
   filter(!is.na(satisfaccion),
+         genero %in% c("Femenino", "Masculino"),
          pais == "Argentina") %>% 
   select(genero, sueldo_bruto, satisfaccion)
 
 
-
+status(satisf)
 profiling_num(satisf)
 
 p25 <- profiling_num(satisf)[1,7]
@@ -718,44 +832,32 @@ p50 <- profiling_num(satisf)[1,8]
 p75 <- profiling_num(satisf)[1,9]
 
 satisf <- satisf %>% 
-  mutate(cuartil = case_when(
+  mutate(cuartil = factor(case_when(
     sueldo_bruto  <   p25  ~ "1Q",
-    sueldo_bruto %in% p25:p50 ~ "2Q",
-    sueldo_bruto %in% p50:p75 ~ "3Q",
-    TRUE ~ "4Q"),
+    sueldo_bruto > p25 & sueldo_bruto < p50 ~ "2Q",
+    sueldo_bruto > p50 & sueldo_bruto < p75 ~ "3Q",
+    TRUE   ~ "4Q")),
     satisfaccion = factor(satisfaccion, 
-                          levels = c(1,2,3,4,5)), 
+                             levels = c("1","2","3","4","5")), 
     cuenta = 1)
+
+
+satisf <- satisf %>% 
+  group_by(genero, satisfaccion, cuartil) %>% 
+  summarise(cant = n())
+
 
 satisf
 
-library(networkD3)
+is_alluvia_form(as.data.frame(satisf), axes = 1:4, silent = TRUE)ta
 
-satisf <- satisf %>% 
-  group_by(satisfaccion, cuartil) %>% 
-  summarise(value = sum(cuenta))
-
-nodes <- data.frame(name=c(as.character(satisf$satisfaccion),
-                           as.character(satisf$cuartil)) %>% 
-                      unique())
-
-satisf$IDsource <- match(satisf$satisfaccion, nodes$name) - 1
-satisf$IDtarget <-match(satisf$cuartil, nodes$name) - 1
-
-
-sankeyNetwork(Links = satisf,
-              Nodes = nodes,
-              Value = "value",
-              NodeID = "name",
-              sinksRight=TRUE, nodeWidth=40, fontSize=13, nodePadding=20)
-
-
-rh %>% 
-  filter(pais == "Argentina") %>% 
-  group_by(funcion_rh, puesto) %>% 
-  summarise(promedio = mean(sueldo_bruto),
-            cuenta = n()) %>% 
-  print(n = nrow(.))
+ggplot(as.data.frame(satisf), aes(y = cant, axis1 = cuartil, axis2 = satisfaccion)) +
+  geom_alluvium(aes(fill = genero), width = 1/12) +
+  geom_stratum(width = 1/12, fill = azul) +
+  geom_label(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = c("Cuartil", "Nivel de Satisfacción"), expand = c(.05, .05)) +
+  scale_fill_manual(values = colores) +
+  estilo
 
 
 
