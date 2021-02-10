@@ -462,16 +462,23 @@ p_95 <-numericos2[8,10]
 rh_ar <- rh_ar %>% 
   filter(between(sueldo_bruto, p_05, p_95),
          puesto != "Director", puesto != "Pasante",
-         genero != "Género Diverso") %>% 
+         genero != "Género Diverso",
+         anios_experiencia < 50) %>% 
   mutate(rubro = fct_recode(rubro, "Servicios financieros" = "Servicios financieros; seguros",
                              "Transporte" = "Transporte (incluyendo aviación civil; ferrocarriles por carretera)",
                             "Ind. Automotriz y Autopartistas" = "Terminales automotrices, fábricas autopartistas, y afines",
                             "Tecnología" = "Tecnologías de Información, Sistemas, y afines",
-                            "Ind. Petrolera" = "Petróleo y producción de gas; refinación de petróleo"))
+                            "Ind. Petrolera" = "Petróleo y producción de gas; refinación de petróleo"),
+         multiplicador = if_else(tipo_contratacion == "Part time", 1.5, 1),
+         sueldo_ft = sueldo_bruto * multiplicador)
+
+rh_ar %>% 
+  group_by(tipo_contratacion) %>% 
+  tally()
 
 # Análisis de puestos
 rh_ar %>% 
-  ggplot(aes(x = puesto, y = sueldo_bruto, fill = genero)) +
+  ggplot(aes(x = puesto, y = sueldo_ft, fill = genero)) +
   geom_boxplot() +
   scale_fill_manual(values = genero) +
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
@@ -483,13 +490,11 @@ rh_ar %>%
   theme(panel.grid.minor.y = element_line(color = "#AEB6BF"))
 
 
-
 # Análisis por rubros
 rubro_ar <- rh_ar %>% 
-  filter(puesto != "Director") %>% 
-  select(rubro, sueldo_bruto) %>% 
+  select(rubro, sueldo_ft) %>% 
   group_by(rubro) %>% 
-  summarise(media_sueldo = mean(sueldo_bruto),
+  summarise(media_sueldo = mean(sueldo_ft),
             respuestas = n()) %>% 
   arrange(-respuestas)
 
@@ -512,12 +517,12 @@ rubro_ar %>%
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank())
 
-
+# Gráfico sueldo promedio por rubro y género
 rh_ar %>% 
   filter(rubro %in% top_rubros) %>% 
-  select(rubro, sueldo_bruto, genero) %>% 
+  select(rubro, sueldo_ft, genero) %>% 
   group_by(rubro, genero) %>% 
-  summarise(media_sueldo = mean(sueldo_bruto),
+  summarise(media_sueldo = mean(sueldo_ft),
             respuestas = n()) %>% 
   arrange(-respuestas) %>% 
   ggplot(aes(x = media_sueldo, y = reorder(rubro, media_sueldo), fill = genero)) +
@@ -536,14 +541,11 @@ rh_ar %>%
 
 
 
-
-
-
 rh_ar %>% 
   filter(rubro %in% top_rubros) %>% 
-  select(rubro, sueldo_bruto, genero) %>% 
+  select(rubro, sueldo_ft, genero) %>% 
   group_by(rubro, genero) %>% 
-  summarise(media_sueldo = mean(sueldo_bruto),
+  summarise(media_sueldo = mean(sueldo_ft),
             respuestas = n()) %>% 
   arrange(-respuestas) %>% 
   ggplot(aes(x = media_sueldo, y = reorder(rubro, media_sueldo), fill = genero)) +
@@ -562,7 +564,7 @@ rh_ar %>%
 
 rh_ar %>% 
   filter(genero != "Género Diverso") %>% 
-  ggplot(aes(x = puesto, y = sueldo_bruto, fill = genero)) +
+  ggplot(aes(x = puesto, y = sueldo_ft, fill = genero)) +
   geom_boxplot() +
   scale_fill_manual(values = genero) +
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
@@ -572,6 +574,8 @@ rh_ar %>%
        x = "", y = "", fill = "Género",
        caption = fuente)
 
+
+# Gráfico de distribución de sueldos por rubros con más respuestas._
 library(ggeconodist)
 
 
@@ -581,9 +585,10 @@ rh_ar %>%
          rubro %in% c("Tecnología", "Servicios de salud", "Comercio",
                       "Alimentación; bebidas; tabaco",
                       "Servicios de consultoría", "Construcción"))  %>% 
-  ggplot(aes(x = puesto, y = sueldo_bruto)) +
+  ggplot(aes(x = puesto, y = sueldo_ft)) +
   geom_econodist(width = 0.5) +
-  geom_point(aes(y = sueldo_bruto, color = genero), alpha = 0.3) +
+  geom_point(aes(y = sueldo_bruto, color = genero), alpha = 0.3,
+             position = position_jitter(width = 0.3)) +
   scale_color_manual(values = genero) +
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
   coord_flip() +
@@ -595,9 +600,123 @@ rh_ar %>%
        caption = fuente)
 
 ## Seguir con sueldos por años de experiencia
-## Seguir con sueldos por tamaño de empresa
+lm_rh <- lm(sueldo_ft ~ anios_experiencia, data = rh_ar)
+lm_rh
 
-  # Representación en puestos de liderazgo ------------------
+lm_hr_results <- summary(lm_rh)
+
+lm_rh_r2 <- round(lm_hr_results[["adj.r.squared"]],3)
+
+ggplot(rh_ar, aes(x=anios_experiencia, y = sueldo_ft)) +
+  geom_point(color = "#1FC3AA", alpha = 0.4, size = 2) + 
+  geom_smooth(method = "lm") +
+  theme_minimal() +
+  theme(text = element_text(family = "Roboto")) +
+  labs(title = "Relación entre sueldo y años de experiencia",
+       x = "Años de Experiencia",
+       y = "Sueldo bruto (AR$)", 
+       caption = fuente) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  geom_text(aes(x=-Inf, y=Inf, hjust=0, vjust=1, label= paste0("R2 = ", lm_rh_r2))) 
+
+
+library(ggpmisc)
+
+mi.formula <- y ~ x
+
+ggplot(rh_ar, aes(x=anios_experiencia, y = sueldo_ft)) +
+  geom_point(color = "#1FC3AA", alpha = 0.4, size = 2) + 
+  geom_smooth(method = "lm", formula = mi.formula, se = FALSE) +
+  theme_minimal() +
+  theme(text = element_text(family = "Roboto")) +
+  labs(title = "Relación entre sueldo y años de experiencia",
+       x = "Años de Experiencia",
+       y = "Sueldo bruto (AR$)", 
+       caption = fuente) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  stat_poly_eq(formula = mi.formula, 
+               aes(label = paste(..rr.label.., sep = "~~~")), 
+               parse = TRUE) +
+  facet_wrap(~puesto)
+
+rh_ar %>% 
+  ggplot(aes(x = anios_en_puesto)) +
+  geom_histogram()
+
+rh_ar %>% 
+  ggplot(aes(x = anios_experiencia)) +
+  geom_histogram()
+
+profiling_num(rh_ar$anios_experiencia)
+
+## Seguir con sueldos por tamaño de empresa
+rh_ar %>% 
+  filter(dotacion < 10000) %>% 
+  ggplot(aes(x = dotacion, y = sueldo_ft, color = origen_capital)) + 
+  geom_point(size = 2, alpha = 0.3) +
+  scale_color_manual(values = c(azul, verde)) +
+  geom_smooth(method = "lm", formula = mi.formula) +
+  facet_wrap(~origen_capital) +
+  theme_minimal() +
+  theme(text = element_text(family = "Roboto")) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  labs(title = "Relación entre sueldo bruto y dotación de empresa",
+       subtitle = "Según origen del capital",
+       x = "Dotación", 
+       y = "Sueldo bruto (AR$)",
+       caption = fuente) +
+  stat_poly_eq(formula = mi.formula, 
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+               parse = TRUE)
+
+library(GGally)
+
+mini_rhar <- rh_ar %>% 
+  select(sueldo_ft, rubro, origen_capital, anios_experiencia, 
+         anios_en_puesto, dotacion, nivel_formacion, genero) %>% 
+  mutate(rubro = fct_lump(rubro, 
+                          p = 0.05, 
+                          other_level = "Otros")) %>% 
+  filter(rubro != "Otros")
+
+ggpairs(mini_rhar)
+
+ggplot(rh_ar, aes(x = genero, y = sueldo_ft, fill = genero)) +
+  geom_boxplot() +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  scale_fill_manual(values = colores) +
+  estiloh +
+  labs(title = "Distribución salarial por género",
+       x = "", y = "",
+       fill = "Género", 
+       caption = fuente)
+
+# Sueldo promedio por antigüedad en puesto
+rh_ar <- rh_ar %>% 
+  mutate(rango_ant_puesto = case_when(
+    anios_en_puesto < 1 ~ "Menos de 1 año",
+    anios_en_puesto < 6 ~ "Entre 1 y 5 años",
+    anios_en_puesto < 11 ~ "Entre 6 y 10 años",
+    anios_en_puesto = T ~ "Más de 10 años"),
+    rango_ant_puesto = fct_relevel(rango_ant_puesto, c("Menos de 1 año", "Entre 1 y 5 años",
+                                                       "Entre 6 y 10 años", "Más de 10 años")))
+
+rh_ar %>% 
+  group_by(puesto, rango_ant_puesto) %>% 
+  summarise(sueldo_promedio = mean(sueldo_ft)) %>% 
+  ggplot(aes(x = rango_ant_puesto, y = sueldo_promedio)) +
+  geom_col(fill = azul) +
+  facet_wrap(~puesto, scales = "free_y") +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  geom_text(aes(label = comma(round(x=sueldo_promedio, 0)), vjust = 1.5),size = 3, color = "white") +
+  estiloh +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  labs(title = "Sueldo bruto promedio por años en el puesto",
+       x = "Experiencia en el puesto", y = "",
+       caption = fuente) 
+
+# Representación en puestos de liderazgo ------------------
 
 
 # Representación de género en la encuesta

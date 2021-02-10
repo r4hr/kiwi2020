@@ -16,7 +16,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.retina = 3, out.width = "70%", fig.align = "center")
 ```
 
-\# Introducción
+# Introducción
 
 El [Club de R para RRHH](https://r4hr.club) es una comunidad de aprendizaje de programación de R, destinada a los profesionales y estudiantes que trabajan o quieren trabajar en el área.
 
@@ -540,6 +540,8 @@ Como primeros pasos, vamos a filtrar los datos correspondientes a Argentina, y l
 
 También eliminamos el puesto de *Director* del análisis y las respuestas con *Género diverso* por la baja cantidad de respuestas.
 
+Otra conversión que hicimos fue pasar los sueldos de las personas que trabajan *part-time* a una equivalencia full-time multiplicando por 1.5 el sueldo completado en la encuesta.
+
 En esta instancia, también simplificamos los nombres de algunos rubros para mejorar las visualizaciones de los resultados.
 
 ```{r arg_prep}
@@ -558,14 +560,16 @@ p_95 <-numericos2[8,10]
 
 rh_ar <- rh_ar %>% 
   filter(between(sueldo_bruto, p_05, p_95),
-         puesto != "Director",
+         puesto != "Director", puesto != "Pasante",
          genero != "Género Diverso",
-         puesto != "Pasante") %>% 
+         anios_experiencia < 50) %>% 
   mutate(rubro = fct_recode(rubro, "Servicios financieros" = "Servicios financieros; seguros",
                              "Transporte" = "Transporte (incluyendo aviación civil; ferrocarriles por carretera)",
                             "Ind. Automotriz y Autopartistas" = "Terminales automotrices, fábricas autopartistas, y afines",
                             "Tecnología" = "Tecnologías de Información, Sistemas, y afines",
-                            "Ind. Petrolera" = "Petróleo y producción de gas; refinación de petróleo"))
+                            "Ind. Petrolera" = "Petróleo y producción de gas; refinación de petróleo"),
+         multiplicador = if_else(tipo_contratacion == "Part time", 1.5, 1),
+         sueldo_ft = sueldo_bruto * multiplicador)
 
 
 ```
@@ -585,7 +589,7 @@ En el siguiente gráfico podemos ver la distribución de los sueldos por cada un
 ```{r box_puestos_ar}
 
 rh_ar %>% 
-  ggplot(aes(x = puesto, y = sueldo_bruto, fill = genero)) +
+  ggplot(aes(x = puesto, y = sueldo_ft, fill = genero)) +
   geom_boxplot() +
   scale_fill_manual(values = genero) +
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
@@ -616,10 +620,9 @@ En el gráfico a continuación podemos ver los sueldos promedios por rubro, teni
 ```{r rubros_ar}
 
 rubro_ar <- rh_ar %>% 
-  filter(puesto != "Director") %>% 
-  select(rubro, sueldo_bruto) %>% 
+  select(rubro, sueldo_ft) %>% 
   group_by(rubro) %>% 
-  summarise(media_sueldo = mean(sueldo_bruto),
+  summarise(media_sueldo = mean(sueldo_ft),
             respuestas = n()) %>% 
   arrange(-respuestas)
 
@@ -649,9 +652,9 @@ Ahora comparemos los sueldos por rubros y géneros. Aquí podremos apreciar las 
 
 rh_ar %>% 
   filter(rubro %in% top_rubros) %>% 
-  select(rubro, sueldo_bruto, genero) %>% 
+  select(rubro, sueldo_ft, genero) %>% 
   group_by(rubro, genero) %>% 
-  summarise(media_sueldo = mean(sueldo_bruto),
+  summarise(media_sueldo = mean(sueldo_ft),
             respuestas = n()) %>% 
   arrange(-respuestas) %>% 
   ggplot(aes(x = media_sueldo, y = reorder(rubro, media_sueldo), fill = genero)) +
@@ -683,7 +686,8 @@ rh_ar %>%
                       "Servicios de consultoría", "Construcción"))  %>% 
   ggplot(aes(x = puesto, y = sueldo_bruto)) +
   geom_econodist(width = 0.5) +
-  geom_point(aes(y = sueldo_bruto, color = genero), alpha = 0.3) +
+  geom_point(aes(y = sueldo_bruto, color = genero), alpha = 0.3,
+             position = position_jitter(width = 0.25)) +
   scale_color_manual(values = genero) +
   scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
   coord_flip() +
@@ -695,6 +699,69 @@ rh_ar %>%
        caption = fuente)
 
 ```
+
+## Relaciones con Sueldo Bruto
+
+En esta sección del análisis buscamos identificar cuáles son los factores que influyen en los ingresos (independientemente de la posición), así que empezamos a explorar los datos.
+
+La primera pregunta que nos hicimos fue si los años de trayectoria influyen en el sueldo. Nuestra hipótesis es que a mayor cantidad de años de experiencia, mayor iba a ser el ingreso.
+
+Lo que vamos a ver en el siguiente gráfico de dispersión, es en el eje horizontal, los años de experiencia, y en el eje vertical, el sueldo bruto expresado en pesos argentinos. Luego, vamos a graficar una recta, que nos va a indicar la *fuerza* de esa relación.
+
+### Relación entre años de experiencia y sueldo bruto
+
+```{r reg_lineal_1}
+lm_rh <- lm(sueldo_ft ~ anios_experiencia, data = rh_ar)
+
+lm_hr_results <- summary(lm_rh)
+
+lm_rh_r2 <- round(lm_hr_results[["r.squared"]],3)
+
+ggplot(rh_ar, aes(x=anios_experiencia, y = sueldo_ft)) +
+  geom_point(color = "#1FC3AA", alpha = 0.4, size = 2) + 
+  geom_smooth(method = "lm") +
+  theme_minimal() +
+  theme(text = element_text(family = "Roboto")) +
+  labs(title = "Relación entre sueldo y años de experiencia",
+       x = "Años de Experiencia",
+       y = "Sueldo bruto (AR$)", 
+       caption = fuente) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  geom_text(aes(x=-Inf, y=Inf, hjust=0, vjust=1, label= paste0("R2 = ", lm_rh_r2))) 
+
+```
+
+En el gráfico podemos apreciar una recta que va creciendo efectivamente: a medida que nos movemos más hacia la derecha, la recta va subiendo. Pero el $R^2$ = `r lm_rh_r2` nos indica cuánto explica los años de experiencia sobre el sueldo bruto, o dicho de otra manera, en qué medida influye la variable x (años de experiencia), sobre la variable y (sueldo bruto). Una definición más precisa de este valor conocido como **Coeficiente de Determinación** es la proporción de la varianza total de la variable explicada por la regresión.
+
+Este valor puede estar entre 0 y 1, mientras más cerca de 0 está menor es la relación, y mientras más cerca de 1 esté el resultado, indica que la regresión explica la variabilidad de la variable de respuesta. Es por eso que este $R^2$ = `r lm_rh_r2` nos indica que los años de experiencia no tienen mucha influencia en los sueldos.
+
+### Relación entre años de experiencia y sueldo bruto por puesto.
+
+Dado que en el gráfico anterior tenemos mezclados los sueldos de administrativos, analistas, jefes y gerentes, decidimos analizar la relación entre los años de experiencia y el sueldo bruto por cada uno de los puestos por separado.
+
+```{r reg_lineal_2, out.width="90%"}
+library(ggpmisc)
+
+mi.formula <- y ~ x
+
+ggplot(rh_ar, aes(x=anios_experiencia, y = sueldo_ft)) +
+  geom_point(color = "#1FC3AA", alpha = 0.4, size = 2) + 
+  geom_smooth(method = "lm", formula = mi.formula, se = FALSE) +
+  theme_minimal() +
+  theme(text = element_text(family = "Roboto")) +
+  labs(title = "Relación entre sueldo y años de experiencia",
+       x = "Años de Experiencia",
+       y = "", 
+       caption = fuente) +
+  scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ";")) +
+  stat_poly_eq(formula = mi.formula, 
+               aes(label = paste(..rr.label.., sep = "~~~")), 
+               parse = TRUE) +
+  facet_wrap(~puesto)
+
+```
+
+Como podemos apreciar en los $R^2$ de cada gráfico. Los años de trayectoria influyen muy poco en los sueldos de cada uno de los puestos.
 
 # Educación
 
